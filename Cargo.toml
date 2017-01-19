@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Ben Bariteau <firba1@gmail.com>"]
 
 [dependencies]
+iron = "0.5.*"

@@ -6,3 +6,4 @@ authors = ["Ben Bariteau <firba1@gmail.com>"]
 [dependencies]
 iron = "0.5.*"
 router = "0.5.*"
+rusqlite = "^0.10.1"

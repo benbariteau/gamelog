@@ -1,3 +1,4 @@
+#[macro_use(itry)]
 extern crate iron;
 extern crate router;
 
@@ -5,8 +6,13 @@ use iron::prelude::*;
 use iron::status;
 use router::Router;
 
+mod model;
+
 fn home(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Hello world!")))
+    let user_games: Vec<String> = itry!(model::get_user_games(1)).iter().map(
+        |user_game| user_game.id.to_string(),
+    ).collect();
+    Ok(Response::with((status::Ok, user_games.join(" "))))
 }
 
 fn main() {

@@ -25,21 +25,27 @@ fn home(_: &mut Request) -> IronResult<Response> {
 }
 
 fn user_log(req: &mut Request) -> IronResult<Response> {
-    let maybe_router: Result<&router::Params, Error> = req.extensions.get::<Router>().ok_or::<Error>(
-        "no router".into()
-    );
-    let router = itry!(maybe_router);
-    let user_id_str = itry!(
-        router.find("user").ok_or::<Error>(
-            "no user id provided".into()
+    let params = itry!(
+        req.extensions.get::<Router>().ok_or::<Error>(
+            "no router".into()
         )
     );
-    let user_id = itry!(user_id_str.parse::<u32>());
-    let user_games: Vec<String> = itry!(model::get_user_games(user_id)).iter().map(
-        |user_game| user_game.id.to_string(),
-    ).collect();
 
-    Ok(Response::with((status::Ok, user_games.join(" "))))
+    let user_id: u32 = itry!(
+        itry!(
+            params.find("user").ok_or::<Error>(
+                "no user id provided".into()
+            )
+        ).parse()
+    );
+
+    let user_games = itry!(model::get_user_games(user_id));
+
+    let user_games_ids_string: String = user_games.iter().map(
+        |user_game| user_game.id.to_string(),
+    ).collect::<Vec<String>>().join(" ");
+
+    Ok(Response::with((status::Ok, user_games_ids_string)))
 }
 
 fn main() {

@@ -10,6 +10,8 @@ extern crate error_chain;
 extern crate askama;
 
 use iron::prelude::*;
+use iron::headers::ContentType;
+use iron::headers::Headers;
 use iron::Chain;
 use iron::status;
 use router::Router;
@@ -58,7 +60,15 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         username: user.username,
         games: Vec::new(),
     };
-    Ok(Response::with((status::Ok, template_context.render())))
+
+    let mut response = Response::with((
+        status::Ok,
+        template_context.render(),
+    ));
+
+    response.headers.set(ContentType::html());
+
+    Ok(response)
 }
 
 fn main() {

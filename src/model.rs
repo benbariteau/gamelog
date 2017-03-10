@@ -20,12 +20,27 @@ fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
     rusqlite::Connection::open(Path::new("gamelog.db"))
 }
 
-pub fn get_user(user_id: u32) -> Result<User, rusqlite::Error> {
+pub fn get_user_by_id(user_id: u32) -> Result<User, rusqlite::Error> {
     let conn = try!(get_conn());
     let mut stmt = try!(conn.prepare("SELECT id, username FROM user WHERE id = ?"));
 
     stmt.query_row(
         &[&user_id],
+        |row| {
+            User {
+                id: row.get(0),
+                username: row.get(1),
+            }
+        },
+    )
+}
+
+pub fn get_user_by_name(username: String) -> Result<User, rusqlite::Error> {
+    let conn = try!(get_conn());
+    let mut stmt = try!(conn.prepare("SELECT id, username FROM user WHERE username = ?"));
+
+    stmt.query_row(
+        &[&username],
         |row| {
             User {
                 id: row.get(0),

@@ -8,6 +8,7 @@ extern crate env_logger;
 extern crate error_chain;
 #[macro_use]
 extern crate askama;
+extern crate rusqlite;
 
 use iron::prelude::*;
 use iron::headers::ContentType;
@@ -20,10 +21,10 @@ use logger::Logger;
 mod model;
 
 mod errors {
-    error_chain! {}
+    error_chain! { }
 }
 
-use errors::Error;
+use errors::{Error, ResultExt};
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
@@ -33,7 +34,14 @@ struct UserLogTemplate {
 }
 
 fn home(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok "Welcome!")))
+    Ok(Response::with((status::Ok, "Welcome!")))
+}
+
+fn get_user_from_id_or_name(user_string: String) -> Result<model::User, errors::Error> {
+    match user_string.parse::<u32>() {
+        Ok(user_id) => model::get_user_by_id(user_id).chain_err(|| "unable to find user with specified id"),
+        Err(_) => model::get_user_by_name(user_string.to_string()).chain_err(|| "unable to find user with specified username"),
+    }
 }
 
 fn user_log(req: &mut Request) -> IronResult<Response> {
@@ -43,17 +51,17 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         )
     );
 
-    let user_id: u32 = itry!(
-        itry!(
-            params.find("user").ok_or::<Error>(
-                "no user id provided".into()
-            )
-        ).parse()
+    let user_string = itry!(
+        params.find("user").ok_or::<Error>(
+            "no user id or username provided".into()
+        )
     );
 
+    let user = itry!(get_user_from_id_or_name(user_string.to_string()));
+
     let template_context = UserLogTemplate {
-        username: itry!(model::get_user(user_id)).username,
-        games: itry!(model::get_user_game_names(user_id)),
+        username: user.username,
+        games: itry!(model::get_user_game_names(user.id)),
     };
 
     let mut response = Response::with((

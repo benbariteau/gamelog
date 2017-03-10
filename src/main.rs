@@ -50,7 +50,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         )
     );
 
-    let user = itry!(model::get_user_from_id_or_name(user_string.to_string()));
+    let user = itry!(model::get_user_from_id_or_name(user_string.to_string()), (status::NotFound, "User not found"));
 
     let template_context = UserLogTemplate {
         username: user.username,

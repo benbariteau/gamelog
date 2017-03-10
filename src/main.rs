@@ -12,7 +12,7 @@ extern crate rusqlite;
 extern crate rand;
 extern crate bcrypt;
 
-use iron::prelude::*;
+use iron::{Request, Response, Iron, Plugin, IronResult};
 use iron::headers::ContentType;
 use iron::Chain;
 use iron::modifiers::RedirectRaw;

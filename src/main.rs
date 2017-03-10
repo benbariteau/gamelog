@@ -1,7 +1,6 @@
 #[macro_use(itry)]
 extern crate iron;
 extern crate router;
-extern crate urlencoded;
 extern crate logger;
 extern crate env_logger;
 #[macro_use]
@@ -18,13 +17,13 @@ use router::Router;
 use askama::Template;
 use logger::Logger;
 
-mod model;
-
 mod errors {
     error_chain! { }
 }
 
 use errors::Error;
+
+mod model;
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
@@ -32,6 +31,10 @@ struct UserLogTemplate {
     username: String,
     games: Vec<String>,
 }
+
+#[derive(Template)]
+#[template(path = "signup_form.html")]
+struct SignupFormTemplate {}
 
 fn home(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Welcome!")))
@@ -67,12 +70,23 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn signup_form(_: &mut Request) -> IronResult<Response> {
+    let mut response = Response::with((
+        status::Ok,
+        SignupFormTemplate{}.render(),
+    ));
+    response.headers.set(ContentType::html());
+
+    Ok(response)
+}
+
 fn main() {
     env_logger::init().unwrap();
 
     let mut router = Router::new();
     router.get("/", home, "home");
     router.get("/log/:user", user_log, "user_log");
+    router.get("/signup", signup_form, "signup_form");
 
     let mut chain = Chain::new(router);
 

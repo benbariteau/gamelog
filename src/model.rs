@@ -1,5 +1,4 @@
-extern crate rusqlite;
-
+use rusqlite;
 use std::path::Path;
 
 pub struct UserGame {

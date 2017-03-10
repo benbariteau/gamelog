@@ -3,6 +3,7 @@ extern crate iron;
 extern crate router;
 extern crate logger;
 extern crate env_logger;
+extern crate urlencoded;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]

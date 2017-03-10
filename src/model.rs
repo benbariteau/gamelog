@@ -16,6 +16,12 @@ pub struct User {
     pub username: String,
 }
 
+mod errors {
+    error_chain! { }
+}
+
+use errors::{Error, ResultExt};
+
 fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
     rusqlite::Connection::open(Path::new("gamelog.db"))
 }
@@ -49,6 +55,14 @@ pub fn get_user_by_name(username: String) -> Result<User, rusqlite::Error> {
         },
     )
 }
+
+pub fn get_user_from_id_or_name(user_string: String) -> Result<User, Error> {
+    match user_string.parse::<u32>() {
+        Ok(user_id) => get_user_by_id(user_id).chain_err(|| "unable to find user with specified id"),
+        Err(_) => get_user_by_name(user_string.to_string()).chain_err(|| "unable to find user with specified username"),
+    }
+}
+
 
 pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
     let conn = try!(get_conn());

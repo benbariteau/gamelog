@@ -24,7 +24,7 @@ mod errors {
     error_chain! { }
 }
 
-use errors::{Error, ResultExt};
+use errors::Error;
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
@@ -35,13 +35,6 @@ struct UserLogTemplate {
 
 fn home(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Welcome!")))
-}
-
-fn get_user_from_id_or_name(user_string: String) -> Result<model::User, errors::Error> {
-    match user_string.parse::<u32>() {
-        Ok(user_id) => model::get_user_by_id(user_id).chain_err(|| "unable to find user with specified id"),
-        Err(_) => model::get_user_by_name(user_string.to_string()).chain_err(|| "unable to find user with specified username"),
-    }
 }
 
 fn user_log(req: &mut Request) -> IronResult<Response> {
@@ -57,7 +50,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         )
     );
 
-    let user = itry!(get_user_from_id_or_name(user_string.to_string()));
+    let user = itry!(model::get_user_from_id_or_name(user_string.to_string()));
 
     let template_context = UserLogTemplate {
         username: user.username,

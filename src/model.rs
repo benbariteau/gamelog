@@ -60,3 +60,28 @@ pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
     
     Ok(user_games)
 }
+
+pub fn get_user_game_names(user_id: u32) -> Result<Vec<String>, rusqlite::Error> {
+    let user_games = try!(get_user_games(user_id));
+
+    let conn = try!(get_conn());
+    let mut stmt = try!(
+        conn.prepare(
+            // put the right number of binds in the IN clause
+            format!(
+                "SELECT name FROM game WHERE id IN ({})",
+                user_games.iter().map(|_| "?").collect::<Vec<&str>>().join(", "),
+            ).as_str()
+        )
+    );
+
+    let mut game_names = Vec::new();
+    for game_name_result in try!(stmt.query_map(
+        &user_games.iter().map(|user_game| &user_game.id as &rusqlite::types::ToSql).collect::<Vec<&rusqlite::types::ToSql>>()[..],
+        |row| row.get(0),
+    )) {
+        game_names.push(try!(game_name_result));
+    }
+
+    Ok(game_names)
+}

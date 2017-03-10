@@ -11,7 +11,6 @@ extern crate askama;
 
 use iron::prelude::*;
 use iron::headers::ContentType;
-use iron::headers::Headers;
 use iron::Chain;
 use iron::status;
 use router::Router;
@@ -34,10 +33,7 @@ struct UserLogTemplate {
 }
 
 fn home(_: &mut Request) -> IronResult<Response> {
-    let user_games: Vec<String> = itry!(model::get_user_games(1)).iter().map(
-        |user_game| user_game.id.to_string(),
-    ).collect();
-    Ok(Response::with((status::Ok, user_games.join(" "))))
+    Ok(Response::with((status::Ok "Welcome!")))
 }
 
 fn user_log(req: &mut Request) -> IronResult<Response> {
@@ -54,11 +50,10 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
             )
         ).parse()
     );
-    let user = itry!(model::get_user(user_id));
-    let user_games = itry!(model::get_user_games(user_id));
+
     let template_context = UserLogTemplate {
-        username: user.username,
-        games: Vec::new(),
+        username: itry!(model::get_user(user_id)).username,
+        games: itry!(model::get_user_game_names(user_id)),
     };
 
     let mut response = Response::with((

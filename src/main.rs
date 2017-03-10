@@ -3,20 +3,24 @@ extern crate iron;
 extern crate router;
 extern crate logger;
 extern crate env_logger;
-extern crate urlencoded;
+extern crate params;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
 extern crate askama;
 extern crate rusqlite;
+extern crate rand;
+extern crate bcrypt;
 
 use iron::prelude::*;
 use iron::headers::ContentType;
 use iron::Chain;
+use iron::modifiers::RedirectRaw;
 use iron::status;
 use router::Router;
 use askama::Template;
 use logger::Logger;
+use params::{Params, Value};
 
 mod errors {
     error_chain! { }
@@ -81,6 +85,23 @@ fn signup_form(_: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn signup(req: &mut Request) -> IronResult<Response> {
+    let params = itry!(req.get_ref::<Params>());
+    let username_result: Result<&String, Error> = match itry!(params.find(&["username"]).ok_or::<Error>("no username provided".into())) {
+        &Value::String(ref username) => Ok(username),
+        _ => Err("username isn't a string".into()),
+    };
+    let username = itry!(username_result);
+    let password_result: Result<&String, Error> = match itry!(params.find(&["password"]).ok_or::<Error>("no password provided".into())) {
+        &Value::String(ref password) => Ok(password),
+        _ => Err("password isn't a string".into()),
+    };
+    let password = itry!(password_result);
+    itry!(model::signup(username, password));
+
+    Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
+}
+
 fn main() {
     env_logger::init().unwrap();
 
@@ -88,6 +109,7 @@ fn main() {
     router.get("/", home, "home");
     router.get("/log/:user", user_log, "user_log");
     router.get("/signup", signup_form, "signup_form");
+    router.post("/signup", signup, "signup");
 
     let mut chain = Chain::new(router);
 

@@ -1,5 +1,9 @@
 use rusqlite;
+use bcrypt;
 use std::path::Path;
+use rand::OsRng;
+use rand::Rng;
+use std::fmt::Write;
 
 pub struct UserGame {
     pub id: u32,
@@ -112,4 +116,28 @@ pub fn get_user_game_names(user_id: u32) -> Result<Vec<String>, rusqlite::Error>
     }
 
     Ok(game_names)
+}
+
+pub fn signup(username: &String, password: &String) -> Result<(), Error> {
+    let mut rng = try!(OsRng::new().chain_err(|| "unable to create rng"));
+    let mut salt_bytes: Vec<u8> = vec![0; 16];
+    rng.fill_bytes(&mut salt_bytes);
+    let mut salt = String::new();
+    for byte in salt_bytes.iter() {
+        write!(&mut salt, "{:X} ", byte).unwrap();
+    }
+
+    let salted_password = format!("{}{}", password, salt);
+    let password_hash_result = bcrypt::hash(
+        salted_password.as_str(),
+        bcrypt::DEFAULT_COST,
+    );
+    let password_hash: String = try!(password_hash_result.chain_err(|| "unable to hash password"));
+
+    let conn = try!(get_conn().chain_err(|| "unable to get db connection"));
+    try!(conn.execute(
+        "INSERT INTO user (username, password_hash, salt) values (?, ?, ?)",
+        &[username, &password_hash, &salt],
+    ).chain_err(|| "unable to insert user row"));
+    Ok(())
 }

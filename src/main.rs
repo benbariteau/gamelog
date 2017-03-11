@@ -124,7 +124,7 @@ impl Value for UserSession {
 fn login(req: &mut Request) -> IronResult<Response> {
     let (username, password) = itry!(get_username_and_password_from_request(req));
     itry!(model::login(username.clone(), password));
-    try!(req.session().set(UserSession{username: username}));
+    req.session().set(UserSession{username: username})?;
 
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
@@ -134,10 +134,8 @@ fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
         Ok(user_session) => Ok(user_session),
         Err(_) => Err("unable to get user session"),
     };
-    let user_session: Option<UserSession> = try!(user_session_result);
-    let username = try!(
-        user_session.ok_or::<Error>("no session".into())
-    ).username;
+    let user_session: Option<UserSession> = user_session_result?;
+    let username = user_session.ok_or::<Error>("no session".into())?.username;
 
     model::get_user_by_name(username.clone()).chain_err(|| "can't get use from db")
 }
@@ -161,11 +159,9 @@ fn user_profile_self(req: &mut Request) -> IronResult<Response> {
 }
 
 fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> errors::Result<String> {
-    match try!(
-        param_map.find(&[key.as_str()]).ok_or::<Error>(
-            format!("{} not provided", key).into()
-        )
-    ) {
+    match param_map.find(
+        &[key.as_str()]
+    ).ok_or::<Error>(format!("{} not provided", key).into())? {
         &params::Value::String(ref value) => Ok(value.clone()),
         _ => Err("param isn't a string".into()),
     }

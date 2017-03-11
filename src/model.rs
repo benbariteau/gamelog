@@ -6,9 +6,9 @@ use rand::Rng;
 use std::fmt::Write;
 
 pub struct UserGame {
-    pub id: u32,
-    pub game_id: u32,
-    pub user_id: u32,
+    pub id: u64,
+    pub game_id: u64,
+    pub user_id: u64,
     pub play_state: String,
     pub acquisition_date: i64,
     pub start_date: Option<i64>,
@@ -16,7 +16,7 @@ pub struct UserGame {
 }
 
 pub struct User {
-    pub id: u32,
+    pub id: u64,
     pub username: String,
 }
 
@@ -30,15 +30,16 @@ fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
     rusqlite::Connection::open(Path::new("gamelog.db"))
 }
 
-pub fn get_user_by_id(user_id: u32) -> Result<User, rusqlite::Error> {
+pub fn get_user_by_id(user_id: u64) -> Result<User, rusqlite::Error> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT id, username FROM user WHERE id = ?")?;
 
     stmt.query_row(
-        &[&user_id],
+        &[&(user_id as i64)],
         |row| {
+            let id: i64 = row.get(1);
             User {
-                id: row.get(0),
+                id: id as u64,
                 username: row.get(1),
             }
         },
@@ -52,8 +53,9 @@ pub fn get_user_by_name(username: String) -> Result<User, rusqlite::Error> {
     stmt.query_row(
         &[&username],
         |row| {
+            let id: i64 = row.get(0);
             User {
-                id: row.get(0),
+                id: id as u64,
                 username: row.get(1),
             }
         },
@@ -61,25 +63,28 @@ pub fn get_user_by_name(username: String) -> Result<User, rusqlite::Error> {
 }
 
 pub fn get_user_from_id_or_name(user_string: String) -> Result<User, Error> {
-    match user_string.parse::<u32>() {
+    match user_string.parse::<u64>() {
         Ok(user_id) => get_user_by_id(user_id).chain_err(|| "unable to find user with specified id"),
         Err(_) => get_user_by_name(user_string.to_string()).chain_err(|| "unable to find user with specified username"),
     }
 }
 
 
-pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
+pub fn get_user_games(user_id: u64) -> Result<Vec<UserGame>, rusqlite::Error> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT id, game_id, user_id, play_state, acquisition_date, start_date, beat_date FROM user_game WHERE user_id = ?")?;
 
     let mut user_games = Vec::new();
     for user_game_result in stmt.query_map(
-        &[&user_id],
+        &[&(user_id as i64)],
         |row| {
+            let id: i64 = row.get(0);
+            let game_id: i64 = row.get(1);
+            let user_id: i64 = row.get(2);
             UserGame {
-                id: row.get(0),
-                game_id: row.get(1),
-                user_id: row.get(2),
+                id: id as u64,
+                game_id: game_id as u64,
+                user_id: user_id as u64,
                 play_state: row.get(3),
                 acquisition_date: row.get(4),
                 start_date: row.get(5),
@@ -93,7 +98,7 @@ pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
     Ok(user_games)
 }
 
-pub fn get_user_game_names(user_id: u32) -> Result<Vec<String>, rusqlite::Error> {
+pub fn get_user_game_names(user_id: u64) -> Result<Vec<String>, rusqlite::Error> {
     let user_games = get_user_games(user_id)?;
 
     let conn = get_conn()?;
@@ -104,10 +109,10 @@ pub fn get_user_game_names(user_id: u32) -> Result<Vec<String>, rusqlite::Error>
             user_games.iter().map(|_| "?").collect::<Vec<&str>>().join(", "),
         ).as_str()
     )?;
-
+    let user_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.id as i64).collect();
     let mut game_names = Vec::new();
     for game_name_result in stmt.query_map(
-        &user_games.iter().map(|user_game| &user_game.id as &rusqlite::types::ToSql).collect::<Vec<&rusqlite::types::ToSql>>()[..],
+        &user_ids.iter().map(|id| id as &rusqlite::types::ToSql).collect::<Vec<&rusqlite::types::ToSql>>()[..],
         |row| row.get(0),
     )? {
         game_names.push(game_name_result?);
@@ -140,13 +145,16 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn login(username: String, password: String) -> Result<u32, Error> {
+pub fn login(username: String, password: String) -> Result<u64, Error> {
     let conn = get_conn().chain_err(|| "unable to get db connection")?;
     let mut stmt = conn.prepare("SELECT id, password_hash, salt FROM user WHERE username = ?").chain_err(|| "unable to prepare statement")?;
 
-    let (id, password_hash, salt): (u32, String, String) = stmt.query_row(
+    let (id, password_hash, salt): (u64, String, String) = stmt.query_row(
         &[&username],
-        |row| (row.get(0), row.get(1), row.get(2)),
+        |row| {
+            let id: i64 = row.get(0);
+            (id as u64, row.get(1), row.get(2))
+        },
     ).chain_err(|| "unable to get user stuff")?;
 
     let salted_password = format!("{}{}", password, salt);
@@ -161,12 +169,15 @@ pub fn login(username: String, password: String) -> Result<u32, Error> {
     }
 }
 
-pub fn upsert_game(name: String) -> Result<u32, Error> {
+pub fn upsert_game(name: String) -> Result<u64, Error> {
     let conn = get_conn().chain_err(|| "unable to get db connection")?;
     let mut stmt = conn.prepare("SELECT id FROM game WHERE name = ?").chain_err(|| "unable to prepare statement")?;
     let mut mapped_rows = stmt.query_map(
         &[&name],
-        |row| row.get(0),
+        |row| {
+            let id: i64 = row.get(0);
+            id as u64
+        }
     ).chain_err(|| "unable to get game id")?;
 
     match mapped_rows.nth(0) {
@@ -180,7 +191,7 @@ pub fn upsert_game(name: String) -> Result<u32, Error> {
     stmt.insert(
         &[&name],
     ).chain_err(|| "unable to insert game row").map(
-        |game_id| game_id as u32
+        |game_id| game_id as u64
     )
 }
 
@@ -191,8 +202,8 @@ pub fn add_user_game(user_game: UserGame) -> Result<(), Error> {
     ).chain_err(|| "unable to prepare statement")?;
     stmt.insert(
         &[
-            &user_game.game_id,
-            &user_game.user_id,
+            &(user_game.game_id as i64),
+            &(user_game.user_id as i64),
             &user_game.play_state,
             &user_game.acquisition_date,
             &user_game.start_date,

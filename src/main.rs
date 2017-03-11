@@ -94,27 +94,12 @@ fn signup_form(_: &mut Request) -> IronResult<Response> {
 }
 
 fn get_username_and_password_from_request(req: &mut Request) -> errors::Result<(String, String)> {
-    let params = try!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
-    let username_result: Result<&String, Error> = match try!(
-        params.find(&["username"]).ok_or::<Error>(
-            "no username provided".into()
-        )
-    ) {
-        &params::Value::String(ref username) => Ok(username),
-        _ => Err("username isn't a string".into()),
-    };
-    let username = try!(username_result);
-    let password_result: Result<&String, Error> = match try!(
-        params.find(&["password"]).ok_or::<Error>(
-            "no password provided".into()
-        )
-    ) {
-        &params::Value::String(ref password) => Ok(password),
-        _ => Err("password isn't a string".into()),
-    };
-    let password = try!(password_result);
+    let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
 
-    Ok((username.clone(), password.clone()))
+    let username = get_param_string_from_param_map(params, "username".to_string())?;
+    let password = get_param_string_from_param_map(params, "password".to_string())?;
+
+    Ok((username, password))
 }
 
 fn signup(req: &mut Request) -> IronResult<Response> {

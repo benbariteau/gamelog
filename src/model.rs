@@ -10,8 +10,9 @@ pub struct UserGame {
     pub game_id: u32,
     pub user_id: u32,
     pub play_state: String,
-    pub start_date: i64,
-    pub end_date: i64,
+    pub acquisition_date: i64,
+    pub start_date: Option<i64>,
+    pub beat_date: Option<i64>,
 }
 
 pub struct User {
@@ -69,7 +70,7 @@ pub fn get_user_from_id_or_name(user_string: String) -> Result<User, Error> {
 
 pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
     let conn = try!(get_conn());
-    let mut stmt = try!(conn.prepare("SELECT id, game_id, user_id, play_state, start_date, beat_date FROM user_game WHERE user_id = ?"));
+    let mut stmt = try!(conn.prepare("SELECT id, game_id, user_id, play_state, acquisition_date, start_date, beat_date FROM user_game WHERE user_id = ?"));
 
     let mut user_games = Vec::new();
     for user_game_result in try!(
@@ -81,8 +82,9 @@ pub fn get_user_games(user_id: u32) -> Result<Vec<UserGame>, rusqlite::Error> {
                     game_id: row.get(1),
                     user_id: row.get(2),
                     play_state: row.get(3),
-                    start_date: row.get(4),
-                    end_date: row.get(5),
+                    acquisition_date: row.get(4),
+                    start_date: row.get(5),
+                    beat_date: row.get(6),
                 }
             },
         )
@@ -150,7 +152,7 @@ pub fn login(username: String, password: String) -> Result<u32, Error> {
         stmt.query_row(
             &[&username],
             |row| (row.get(0), row.get(1), row.get(2)),
-        ).chain_err(|| "unable to prepare statement")
+        ).chain_err(|| "unable to get user stuff")
     );
 
     let salted_password = format!("{}{}", password, salt);
@@ -160,4 +162,45 @@ pub fn login(username: String, password: String) -> Result<u32, Error> {
     } else {
         Err("password does not match".into())
     }
+}
+
+pub fn upsert_game(name: String) -> Result<u32, Error> {
+    let conn = try!(get_conn().chain_err(|| "unable to get db connection"));
+    let mut stmt = try!(conn.prepare("SELECT id FROM game WHERE name = ?").chain_err(|| "unable to prepare statement"));
+    let mut mapped_rows = try!(stmt.query_map(
+        &[&name],
+        |row| row.get(0),
+    ).chain_err(|| "unable to get game id"));
+
+    match mapped_rows.nth(0) {
+        Some(result) => {
+            return result.chain_err(|| "error mapping rows")
+        },
+        None => {},
+    }
+
+    let mut stmt = try!(conn.prepare("INSERT INTO game (name) values (?)").chain_err(|| "unable to prepare statement"));
+    stmt.insert(
+        &[&name],
+    ).chain_err(|| "unable to insert game row").map(
+        |game_id| game_id as u32
+    )
+}
+
+pub fn add_user_game(user_game: UserGame) -> Result<(), Error> {
+    let conn = get_conn().chain_err(|| "unable to get db connection")?;
+    let mut stmt = conn.prepare(
+        "INSERT INTO user_game (game_id, user_id, play_state, acquisition_date, start_date, beat_date) values (?, ?, ?, ?, ?, ?)"
+    ).chain_err(|| "unable to prepare statement")?;
+    stmt.insert(
+        &[
+            &user_game.game_id,
+            &user_game.user_id,
+            &user_game.play_state,
+            &user_game.acquisition_date,
+            &user_game.start_date,
+            &user_game.beat_date,
+        ],
+    ).chain_err(|| "unable to insert user_game row")?;
+    Ok(())
 }

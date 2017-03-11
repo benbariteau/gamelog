@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <title>add game to collection</title>
+    </head>
+    <body>
+        <form method="post">
+            <div>
+                <label for="Name">Name:</label>
+                <input type="text" id="name" name="name" />
+            </div>
+            <fieldset>
+                <legend>State</legend>
+                <input type="radio" name="state" id="state_unplayed" value="unplayed" />
+                <label for="state_unplayed">Unplayed</label>
+                <input type="radio" name="state" id="state_unfinished" value="unfinished" />
+                <label for="state_unfinished">Unfinished</label>
+                <input type="radio" name="state" id="state_beaten" value="beaten" />
+                <label for="state_beaten">Beaten</label>
+                <input type="radio" name="state" id="state_completed" value="completed" />
+                <label for="state_completed">Completed</label>
+                <input type="radio" name="state" id="state_100_percent" value="100_percent" />
+                <label for="state_100_percent">100%</label>
+                <input type="radio" name="state" id="state_wont_beat" value="wont_beat" />
+                <label for="state_wont_beat">Won't Beat</label>
+                <input type="radio" name="state" id="state_multiplayer" value="multiplayer" />
+                <label for="state_multiplayer">Muliplayer</label>
+                <input type="radio" name="state" id="state_null" value="null" />
+                <label for="state_null">Null</label>
+            </fieldset>
+            <button type="submit">Add Game</button>
+        </form>
+    </body>
+</html>

@@ -12,6 +12,7 @@ extern crate rusqlite;
 extern crate rand;
 extern crate bcrypt;
 extern crate iron_sessionstorage;
+extern crate time;
 
 use iron::{Request, Response, Iron, Plugin, IronResult};
 use iron::headers::ContentType;
@@ -43,6 +44,10 @@ struct UserLogTemplate {
 #[derive(Template)]
 #[template(path = "signup_form.html")]
 struct SignupFormTemplate {}
+
+#[derive(Template)]
+#[template(path = "add_user_game_form.html")]
+struct AddUserGameFormTemplate {}
 
 fn home(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Welcome!")))
@@ -139,12 +144,24 @@ fn login(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
+fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
+    let user_session_result = match req.session().get::<UserSession>() {
+        Ok(user_session) => Ok(user_session),
+        Err(_) => Err("unable to get user session"),
+    };
+    let user_session: Option<UserSession> = try!(user_session_result);
+    let username = try!(
+        user_session.ok_or::<Error>("no session".into())
+    ).username;
+
+    model::get_user_by_name(username.clone()).chain_err(|| "can't get use from db")
+}
+
 fn user_profile_self(req: &mut Request) -> IronResult<Response> {
-    let username = itry!(try!(req.session().get::<UserSession>()).ok_or::<Error>("no session".into())).username;
-    let user = itry!(model::get_user_by_name(username.clone()));
+    let user = itry!(get_user_from_request(req));
 
     let template_context = UserLogTemplate {
-        username: username,
+        username: user.username,
         games: itry!(model::get_user_game_names(user.id)),
     };
 
@@ -156,6 +173,48 @@ fn user_profile_self(req: &mut Request) -> IronResult<Response> {
     response.headers.set(ContentType::html());
 
     Ok(response)
+}
+
+fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> errors::Result<String> {
+    match try!(
+        param_map.find(&[key.as_str()]).ok_or::<Error>(
+            format!("{} not provided", key).into()
+        )
+    ) {
+        &params::Value::String(ref value) => Ok(value.clone()),
+        _ => Err("param isn't a string".into()),
+    }
+}
+
+fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
+    let mut response = Response::with((
+        status::Ok,
+        AddUserGameFormTemplate{}.render(),
+    ));
+    response.headers.set(ContentType::html());
+
+    Ok(response)
+}
+
+fn add_user_game(req: &mut Request) -> IronResult<Response> {
+    let user = itry!(get_user_from_request(req));
+    let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
+    let name = itry!(get_param_string_from_param_map(params, "name".to_string()));
+    let game_id = itry!(model::upsert_game(name));
+    let state = itry!(get_param_string_from_param_map(params, "state".to_string()));
+    itry!(
+        model::add_user_game(model::UserGame{
+            id: 0,
+            game_id: game_id,
+            user_id: user.id,
+            play_state: state,
+            acquisition_date: time::get_time().sec,
+            start_date: None,
+            beat_date: None,
+        })
+    );
+
+    Ok(Response::with((status::SeeOther, RedirectRaw("/me".to_string()))))
 }
 
 fn main() {
@@ -171,6 +230,8 @@ fn main() {
     router.get("/login", signup_form, "login_form");
     router.post("/login", login, "login");
     router.get("/me", user_profile_self, "user_profile_self");
+    router.get("/collection/add", add_user_game_form, "add_user_game_form");
+    router.post("/collection/add", add_user_game, "add_user_game");
 
     let mut chain = Chain::new(router);
     chain.link(Logger::new(None));

@@ -72,7 +72,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
 
     let template_context = UserLogTemplate {
         username: user.username,
-        games: itry!(model::get_user_game_names(user.id as u64)),
+        games: itry!(model::get_user_game_names(user.id)),
     };
 
     let mut response = Response::with((
@@ -147,7 +147,7 @@ fn user_profile_self(req: &mut Request) -> IronResult<Response> {
 
     let template_context = UserLogTemplate {
         username: user.username,
-        games: itry!(model::get_user_game_names(user.id as u64)),
+        games: itry!(model::get_user_game_names(user.id)),
     };
 
     let mut response = Response::with((

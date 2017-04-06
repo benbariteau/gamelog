@@ -18,6 +18,12 @@ mod schema {
         }
     }
     table! {
+        game {
+            id -> BigInt,
+            name -> VarChar,
+        }
+    }
+    table! {
         user_game {
             id -> BigInt,
             game_id -> BigInt,
@@ -30,7 +36,7 @@ mod schema {
     }
 }
 
-use self::schema::{user_game,user};
+use self::schema::{user_game,user,game};
 
 #[derive(Queryable)]
 pub struct UserGame {
@@ -58,6 +64,12 @@ pub struct NewUserGame {
 pub struct User {
     pub id: i64,
     pub username: String,
+}
+
+#[derive(Queryable)]
+pub struct Game {
+    pub id: i64,
+    pub name: String,
 }
 
 mod errors {
@@ -103,25 +115,17 @@ pub fn get_user_games(user_id: i64) -> Result<Vec<UserGame>, Error> {
     ).load::<UserGame>(&conn).chain_err(|| "unable to load user games")
 }
 
-pub fn get_user_game_names(user_id: u64) -> Result<Vec<String>, Error> {
-    let user_games = get_user_games(user_id as i64).chain_err(|| "unable to get user_games")?;
+pub fn get_user_game_names(user_id: i64) -> Result<Vec<String>, Error> {
+    let user_games = get_user_games(user_id)?;
 
-    let conn = get_conn().chain_err(|| "unable to get db connection")?;
-    let mut stmt = conn.prepare(
-        // put the right number of binds in the IN clause
-        format!(
-            "SELECT name FROM game WHERE id IN ({})",
-            user_games.iter().map(|_| "?").collect::<Vec<&str>>().join(", "),
-        ).as_str()
-    ).chain_err(|| "unable to load game rows")?;
-    let user_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.id as i64).collect();
-    let mut game_names = Vec::new();
-    for game_name_result in stmt.query_map(
-        &user_ids.iter().map(|id| id as &rusqlite::types::ToSql).collect::<Vec<&rusqlite::types::ToSql>>()[..],
-        |row| row.get(0),
-    ).chain_err(|| "unable to get user_game rows")? {
-        game_names.push(game_name_result.chain_err(|| "unable to get game name")?);
-    }
+    let game_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.game_id).collect();
+    let conn = get_diesel_conn()?;
+    let games = game::table.filter(
+        game::id.eq_any(game_ids),
+    ).load::<Game>(
+        &conn,
+    ).chain_err(|| "unable to get game names")?;
+    let game_names = games.iter().map(|game| game.name.clone()).collect();
 
     Ok(game_names)
 }

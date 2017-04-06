@@ -12,6 +12,12 @@ use diesel::ExpressionMethods;
 
 mod schema {
     table! {
+        user {
+            id -> BigInt,
+            username -> VarChar,
+        }
+    }
+    table! {
         user_game {
             id -> BigInt,
             game_id -> BigInt,
@@ -24,7 +30,7 @@ mod schema {
     }
 }
 
-use self::schema::user_game;
+use self::schema::{user_game,user};
 
 #[derive(Queryable)]
 pub struct UserGame {
@@ -48,8 +54,9 @@ pub struct NewUserGame {
     pub beat_date: Option<i64>,
 }
 
+#[derive(Queryable)]
 pub struct User {
-    pub id: u64,
+    pub id: i64,
     pub username: String,
 }
 
@@ -67,40 +74,22 @@ fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
     rusqlite::Connection::open(Path::new("gamelog.db"))
 }
 
-pub fn get_user_by_id(user_id: u64) -> Result<User, rusqlite::Error> {
-    let conn = get_conn()?;
-    let mut stmt = conn.prepare("SELECT id, username FROM user WHERE id = ?")?;
-
-    stmt.query_row(
-        &[&(user_id as i64)],
-        |row| {
-            let id: i64 = row.get(1);
-            User {
-                id: id as u64,
-                username: row.get(1),
-            }
-        },
-    )
+pub fn get_user_by_id(user_id: i64) -> Result<User, Error> {
+    let conn = get_diesel_conn()?;
+    user::table.filter(
+        user::id.eq(user_id)
+    ).get_result::<User>(&conn).chain_err(|| "unable to load user")
 }
 
-pub fn get_user_by_name(username: String) -> Result<User, rusqlite::Error> {
-    let conn = get_conn()?;
-    let mut stmt = conn.prepare("SELECT id, username FROM user WHERE username = ?")?;
-
-    stmt.query_row(
-        &[&username],
-        |row| {
-            let id: i64 = row.get(0);
-            User {
-                id: id as u64,
-                username: row.get(1),
-            }
-        },
-    )
+pub fn get_user_by_name(username: String) -> Result<User, Error> {
+    let conn = get_diesel_conn()?;
+    user::table.filter(
+        user::username.eq(username)
+    ).get_result::<User>(&conn).chain_err(|| "unable to load user")
 }
 
 pub fn get_user_from_id_or_name(user_string: String) -> Result<User, Error> {
-    match user_string.parse::<u64>() {
+    match user_string.parse::<i64>() {
         Ok(user_id) => get_user_by_id(user_id).chain_err(|| "unable to find user with specified id"),
         Err(_) => get_user_by_name(user_string.to_string()).chain_err(|| "unable to find user with specified username"),
     }

@@ -4,10 +4,10 @@ use std::path::Path;
 use rand::OsRng;
 use rand::Rng;
 use std::fmt::Write;
+use diesel::insert;
 use diesel::sqlite::SqliteConnection;
 use diesel::connection::Connection;
-use diesel::result::ConnectionResult;
-use diesel::prelude::{FilterDsl,LoadDsl};
+use diesel::prelude::{FilterDsl,LoadDsl,ExecuteDsl};
 use diesel::ExpressionMethods;
 
 mod schema {
@@ -24,6 +24,8 @@ mod schema {
     }
 }
 
+use self::schema::user_game;
+
 #[derive(Queryable)]
 pub struct UserGame {
     pub id: i64,
@@ -35,10 +37,11 @@ pub struct UserGame {
     pub beat_date: Option<i64>,
 }
 
-pub struct UserGameOld {
-    pub id: u64,
-    pub game_id: u64,
-    pub user_id: u64,
+#[derive(Insertable)]
+#[table_name="user_game"]
+pub struct NewUserGame {
+    pub game_id: i64,
+    pub user_id: i64,
     pub play_state: String,
     pub acquisition_date: i64,
     pub start_date: Option<i64>,
@@ -56,8 +59,8 @@ mod errors {
 
 use errors::{Error, ResultExt};
 
-fn get_diesel_conn() -> ConnectionResult<SqliteConnection> {
-    SqliteConnection::establish("gamelog.db")
+fn get_diesel_conn() -> Result<SqliteConnection, Error> {
+    SqliteConnection::establish("gamelog.db").chain_err(|| "unable to get sqlite connection")
 }
 
 fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
@@ -208,20 +211,14 @@ pub fn upsert_game(name: String) -> Result<u64, Error> {
     )
 }
 
-pub fn add_user_game(user_game: UserGameOld) -> Result<(), Error> {
-    let conn = get_conn().chain_err(|| "unable to get db connection")?;
-    let mut stmt = conn.prepare(
-        "INSERT INTO user_game (game_id, user_id, play_state, acquisition_date, start_date, beat_date) values (?, ?, ?, ?, ?, ?)"
-    ).chain_err(|| "unable to prepare statement")?;
-    stmt.insert(
-        &[
-            &(user_game.game_id as i64),
-            &(user_game.user_id as i64),
-            &user_game.play_state,
-            &user_game.acquisition_date,
-            &user_game.start_date,
-            &user_game.beat_date,
-        ],
-    ).chain_err(|| "unable to insert user_game row")?;
+pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    insert(
+        &user_game,
+    ).into(
+        user_game::table,
+    ).execute(
+        &conn,
+    ).chain_err(|| "unable to save new user game")?;
     Ok(())
 }

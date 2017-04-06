@@ -186,10 +186,9 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let game_id = itry!(model::upsert_game(name));
     let state = itry!(get_param_string_from_param_map(params, "state".to_string()));
     itry!(
-        model::add_user_game(model::UserGameOld{
-            id: 0,
-            game_id: game_id,
-            user_id: user.id,
+        model::add_user_game(model::NewUserGame{
+            game_id: game_id as i64,
+            user_id: user.id as i64,
             play_state: state,
             acquisition_date: time::get_time().sec,
             start_date: None,

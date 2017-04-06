@@ -13,6 +13,8 @@ extern crate rand;
 extern crate bcrypt;
 extern crate iron_sessionstorage;
 extern crate time;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
 use iron::{Request, Response, Iron, Plugin, IronResult};
 use iron::headers::ContentType;
@@ -184,7 +186,7 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let game_id = itry!(model::upsert_game(name));
     let state = itry!(get_param_string_from_param_map(params, "state".to_string()));
     itry!(
-        model::add_user_game(model::UserGame{
+        model::add_user_game(model::UserGameOld{
             id: 0,
             game_id: game_id,
             user_id: user.id,

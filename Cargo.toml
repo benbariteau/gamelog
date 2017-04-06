@@ -18,6 +18,8 @@ bcrypt = "^0.1.3"
 params = "^0.6.0"
 iron-sessionstorage = "^0.6.6"
 time = "^0.1.36"
+diesel = { version = "^0.12.0", features = ["sqlite"] }
+diesel_codegen = { version = "^0.12.0", features = ["sqlite"] }
 
 [build-dependencies]
 askama = "^0.3.1"

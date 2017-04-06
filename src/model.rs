@@ -4,8 +4,38 @@ use std::path::Path;
 use rand::OsRng;
 use rand::Rng;
 use std::fmt::Write;
+use diesel::sqlite::SqliteConnection;
+use diesel::connection::Connection;
+use diesel::result::ConnectionResult;
+use diesel::prelude::{FilterDsl,LoadDsl};
+use diesel::ExpressionMethods;
 
+mod schema {
+    table! {
+        user_game {
+            id -> BigInt,
+            game_id -> BigInt,
+            user_id -> BigInt,
+            play_state -> VarChar,
+            acquisition_date -> BigInt,
+            start_date -> Nullable<BigInt>,
+            beat_date -> Nullable<BigInt>,
+        }
+    }
+}
+
+#[derive(Queryable)]
 pub struct UserGame {
+    pub id: i64,
+    pub game_id: i64,
+    pub user_id: i64,
+    pub play_state: String,
+    pub acquisition_date: i64,
+    pub start_date: Option<i64>,
+    pub beat_date: Option<i64>,
+}
+
+pub struct UserGameOld {
     pub id: u64,
     pub game_id: u64,
     pub user_id: u64,
@@ -25,6 +55,10 @@ mod errors {
 }
 
 use errors::{Error, ResultExt};
+
+fn get_diesel_conn() -> ConnectionResult<SqliteConnection> {
+    SqliteConnection::establish("gamelog.db")
+}
 
 fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
     rusqlite::Connection::open(Path::new("gamelog.db"))
@@ -70,52 +104,31 @@ pub fn get_user_from_id_or_name(user_string: String) -> Result<User, Error> {
 }
 
 
-pub fn get_user_games(user_id: u64) -> Result<Vec<UserGame>, rusqlite::Error> {
-    let conn = get_conn()?;
-    let mut stmt = conn.prepare("SELECT id, game_id, user_id, play_state, acquisition_date, start_date, beat_date FROM user_game WHERE user_id = ?")?;
-
-    let mut user_games = Vec::new();
-    for user_game_result in stmt.query_map(
-        &[&(user_id as i64)],
-        |row| {
-            let id: i64 = row.get(0);
-            let game_id: i64 = row.get(1);
-            let user_id: i64 = row.get(2);
-            UserGame {
-                id: id as u64,
-                game_id: game_id as u64,
-                user_id: user_id as u64,
-                play_state: row.get(3),
-                acquisition_date: row.get(4),
-                start_date: row.get(5),
-                beat_date: row.get(6),
-            }
-        },
-    )? {
-        user_games.push(user_game_result?);
-    }
-    
-    Ok(user_games)
+pub fn get_user_games(user_id: i64) -> Result<Vec<UserGame>, Error> {
+    let conn = get_diesel_conn().chain_err(|| "unable to get db connection")?;
+    schema::user_game::table.filter(
+        schema::user_game::user_id.eq(user_id),
+    ).load::<UserGame>(&conn).chain_err(|| "unable to load user games")
 }
 
-pub fn get_user_game_names(user_id: u64) -> Result<Vec<String>, rusqlite::Error> {
-    let user_games = get_user_games(user_id)?;
+pub fn get_user_game_names(user_id: u64) -> Result<Vec<String>, Error> {
+    let user_games = get_user_games(user_id as i64).chain_err(|| "unable to get user_games")?;
 
-    let conn = get_conn()?;
+    let conn = get_conn().chain_err(|| "unable to get db connection")?;
     let mut stmt = conn.prepare(
         // put the right number of binds in the IN clause
         format!(
             "SELECT name FROM game WHERE id IN ({})",
             user_games.iter().map(|_| "?").collect::<Vec<&str>>().join(", "),
         ).as_str()
-    )?;
+    ).chain_err(|| "unable to load game rows")?;
     let user_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.id as i64).collect();
     let mut game_names = Vec::new();
     for game_name_result in stmt.query_map(
         &user_ids.iter().map(|id| id as &rusqlite::types::ToSql).collect::<Vec<&rusqlite::types::ToSql>>()[..],
         |row| row.get(0),
-    )? {
-        game_names.push(game_name_result?);
+    ).chain_err(|| "unable to get user_game rows")? {
+        game_names.push(game_name_result.chain_err(|| "unable to get game name")?);
     }
 
     Ok(game_names)
@@ -195,7 +208,7 @@ pub fn upsert_game(name: String) -> Result<u64, Error> {
     )
 }
 
-pub fn add_user_game(user_game: UserGame) -> Result<(), Error> {
+pub fn add_user_game(user_game: UserGameOld) -> Result<(), Error> {
     let conn = get_conn().chain_err(|| "unable to get db connection")?;
     let mut stmt = conn.prepare(
         "INSERT INTO user_game (game_id, user_id, play_state, acquisition_date, start_date, beat_date) values (?, ?, ?, ?, ?, ?)"

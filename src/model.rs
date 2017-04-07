@@ -3,7 +3,6 @@ use diesel;
 use rand::OsRng;
 use rand::Rng;
 use std::fmt::Write;
-use diesel::insert;
 use diesel::result::OptionalExtension;
 use diesel::sqlite::SqliteConnection;
 use diesel::connection::Connection;
@@ -181,7 +180,7 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
     let conn = get_diesel_conn()?;
     let new_user = NewUser{username: username};
     conn.transaction(|| {
-        insert(
+        diesel::insert(
             &new_user,
         ).into(
             user::table,
@@ -197,7 +196,7 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
             salt: salt,
         };
 
-        insert(
+        diesel::insert(
             &new_user_private,
         ).into(
             user_private::table,
@@ -263,7 +262,7 @@ pub fn upsert_game(name: String) -> Result<i64, Error> {
 
     let conn = get_diesel_conn()?;
 
-    insert(
+    diesel::insert(
         &NewGame{
             name: name.clone(),
         },
@@ -278,7 +277,7 @@ pub fn upsert_game(name: String) -> Result<i64, Error> {
 
 pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {
     let conn = get_diesel_conn()?;
-    insert(
+    diesel::insert(
         &user_game,
     ).into(
         user_game::table,

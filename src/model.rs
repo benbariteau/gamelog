@@ -1,13 +1,30 @@
+use std::fmt::Write;
+
 use bcrypt;
+use diesel::ExpressionMethods;
+use diesel::connection::Connection;
+use diesel::prelude::ExecuteDsl;
+use diesel::prelude::FilterDsl;
+use diesel::prelude::LimitDsl;
+use diesel::prelude::LoadDsl;
+use diesel::prelude::OrderDsl;
+use diesel::result::OptionalExtension;
+use diesel::sqlite::SqliteConnection;
 use diesel;
 use rand::OsRng;
 use rand::Rng;
-use std::fmt::Write;
-use diesel::result::OptionalExtension;
-use diesel::sqlite::SqliteConnection;
-use diesel::connection::Connection;
-use diesel::prelude::{FilterDsl,LoadDsl,ExecuteDsl,OrderDsl,LimitDsl};
-use diesel::ExpressionMethods;
+
+use self::errors::Error;
+use self::errors::ResultExt;
+use self::schema::game;
+use self::schema::user;
+use self::schema::user_game;
+use self::schema::user_private;
+
+
+mod errors {
+    error_chain! { }
+}
 
 mod schema {
     table! {
@@ -42,8 +59,6 @@ mod schema {
         }
     }
 }
-
-use self::schema::{user_game,user,game,user_private};
 
 #[derive(Queryable)]
 pub struct UserGame {
@@ -106,12 +121,6 @@ pub struct Game {
 struct NewGame {
     name: String,
 }
-
-mod errors {
-    error_chain! { }
-}
-
-use errors::{Error, ResultExt};
 
 fn get_diesel_conn() -> Result<SqliteConnection, Error> {
     SqliteConnection::establish("gamelog.db").chain_err(|| "unable to get sqlite connection")

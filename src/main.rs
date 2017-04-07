@@ -1,33 +1,40 @@
-#[macro_use(itry)]
-extern crate iron;
-extern crate router;
-extern crate logger;
-extern crate env_logger;
-extern crate params;
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate askama;
-extern crate rand;
 extern crate bcrypt;
+extern crate env_logger;
 extern crate iron_sessionstorage;
+extern crate logger;
+extern crate params;
+extern crate rand;
+extern crate router;
 extern crate time;
+
+#[macro_use] extern crate askama;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate error_chain;
 
-use iron::{Request, Response, Iron, Plugin, IronResult};
-use iron::headers::ContentType;
+#[macro_use(itry)] extern crate iron;
+
+use askama::Template;
 use iron::Chain;
+use iron::Iron;
+use iron::IronResult;
+use iron::Plugin;
+use iron::Request;
+use iron::Response;
+use iron::headers::ContentType;
 use iron::modifiers::RedirectRaw;
 use iron::status;
-use router::Router;
-use askama::Template;
+use iron_sessionstorage::SessionRequestExt;
+use iron_sessionstorage::SessionStorage;
+use iron_sessionstorage::Value;
+use iron_sessionstorage::backends::SignedCookieBackend;
 use logger::Logger;
 use params::Params;
-use iron_sessionstorage::{SessionStorage, SessionRequestExt, Value};
-use iron_sessionstorage::backends::SignedCookieBackend;
+use router::Router;
 
-use errors::{Error, ResultExt};
+use errors::Error;
+use errors::ResultExt;
+
 mod model;
 
 mod errors {

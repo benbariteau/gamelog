@@ -8,7 +8,6 @@ extern crate params;
 extern crate error_chain;
 #[macro_use]
 extern crate askama;
-extern crate rusqlite;
 extern crate rand;
 extern crate bcrypt;
 extern crate iron_sessionstorage;

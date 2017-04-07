@@ -1,10 +1,10 @@
-use rusqlite;
 use bcrypt;
-use std::path::Path;
+use diesel;
 use rand::OsRng;
 use rand::Rng;
 use std::fmt::Write;
 use diesel::insert;
+use diesel::result::OptionalExtension;
 use diesel::sqlite::SqliteConnection;
 use diesel::connection::Connection;
 use diesel::prelude::{FilterDsl,LoadDsl,ExecuteDsl,OrderDsl,LimitDsl};
@@ -102,6 +102,12 @@ pub struct Game {
     pub name: String,
 }
 
+#[derive(Insertable)]
+#[table_name="game"]
+struct NewGame {
+    name: String,
+}
+
 mod errors {
     error_chain! { }
 }
@@ -110,10 +116,6 @@ use errors::{Error, ResultExt};
 
 fn get_diesel_conn() -> Result<SqliteConnection, Error> {
     SqliteConnection::establish("gamelog.db").chain_err(|| "unable to get sqlite connection")
-}
-
-fn get_conn() -> rusqlite::Result<rusqlite::Connection> {
-    rusqlite::Connection::open(Path::new("gamelog.db"))
 }
 
 pub fn get_user_by_id(user_id: i64) -> Result<User, Error> {
@@ -230,30 +232,48 @@ pub fn login(username: String, password: String) -> Result<i64, Error> {
     }
 }
 
-pub fn upsert_game(name: String) -> Result<u64, Error> {
-    let conn = get_conn().chain_err(|| "unable to get db connection")?;
-    let mut stmt = conn.prepare("SELECT id FROM game WHERE name = ?").chain_err(|| "unable to prepare statement")?;
-    let mut mapped_rows = stmt.query_map(
-        &[&name],
-        |row| {
-            let id: i64 = row.get(0);
-            id as u64
-        }
-    ).chain_err(|| "unable to get game id")?;
+fn get_game_by_name_with_conn(
+    name: &String,
+    conn: &SqliteConnection,
+) -> Result<Game, diesel::result::Error> {
+    game::table.filter(
+        game::name.eq(name),
+    ).get_result::<Game>(
+        conn,
+    )
+}
 
-    match mapped_rows.nth(0) {
-        Some(result) => {
-            return result.chain_err(|| "error mapping rows")
+fn get_optional_game_by_name(name: &String) -> Result<Option<Game>, Error> {
+    let conn = get_diesel_conn()?;
+    get_game_by_name_with_conn(name, &conn).optional().chain_err(|| "unable to load game")
+}
+
+fn get_game_by_name(name: &String) -> Result<Game, Error> {
+    let conn = get_diesel_conn()?;
+    get_game_by_name_with_conn(name, &conn).chain_err(|| "unable to load game")
+}
+
+pub fn upsert_game(name: String) -> Result<i64, Error> {
+    match get_optional_game_by_name(&name)? {
+        Some(game_row) => {
+            return Ok(game_row.id)
         },
         None => {},
     }
 
-    let mut stmt = conn.prepare("INSERT INTO game (name) values (?)").chain_err(|| "unable to prepare statement")?;
-    stmt.insert(
-        &[&name],
-    ).chain_err(|| "unable to insert game row").map(
-        |game_id| game_id as u64
-    )
+    let conn = get_diesel_conn()?;
+
+    insert(
+        &NewGame{
+            name: name.clone(),
+        },
+    ).into(
+        game::table,
+    ).execute(
+        &conn
+    ).chain_err(|| "unable to insert new game")?;
+
+    Ok(get_game_by_name(&name)?.id)
 }
 
 pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {

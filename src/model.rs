@@ -7,7 +7,7 @@ use std::fmt::Write;
 use diesel::insert;
 use diesel::sqlite::SqliteConnection;
 use diesel::connection::Connection;
-use diesel::prelude::{FilterDsl,LoadDsl,ExecuteDsl};
+use diesel::prelude::{FilterDsl,LoadDsl,ExecuteDsl,OrderDsl,LimitDsl};
 use diesel::ExpressionMethods;
 
 mod schema {
@@ -15,6 +15,14 @@ mod schema {
         user {
             id -> BigInt,
             username -> VarChar,
+        }
+    }
+    table! {
+        user_private {
+            id -> BigInt,
+            user_id -> BigInt,
+            password_hash -> VarChar,
+            salt -> VarChar,
         }
     }
     table! {
@@ -36,7 +44,7 @@ mod schema {
     }
 }
 
-use self::schema::{user_game,user,game};
+use self::schema::{user_game,user,game,user_private};
 
 #[derive(Queryable)]
 pub struct UserGame {
@@ -58,6 +66,28 @@ pub struct NewUserGame {
     pub acquisition_date: i64,
     pub start_date: Option<i64>,
     pub beat_date: Option<i64>,
+}
+
+#[derive(Insertable)]
+#[table_name="user"]
+struct NewUser {
+    username: String,
+}
+
+#[derive(Insertable)]
+#[table_name="user_private"]
+struct NewUserPrivate {
+    user_id: i64,
+    password_hash: String,
+    salt: String,
+}
+
+#[derive(Queryable)]
+pub struct UserPrivate {
+    pub id: i64,
+    pub user_id: i64,
+    pub password_hash: String,
+    pub salt: String,
 }
 
 #[derive(Queryable)]
@@ -146,33 +176,55 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
     );
     let password_hash: String = password_hash_result.chain_err(|| "unable to hash password")?;
 
-    let conn = get_conn().chain_err(|| "unable to get db connection")?;
-    conn.execute(
-        "INSERT INTO user (username, password_hash, salt) values (?, ?, ?)",
-        &[&username, &password_hash, &salt],
-    ).chain_err(|| "unable to insert user row")?;
+    let conn = get_diesel_conn()?;
+    let new_user = NewUser{username: username};
+    conn.transaction(|| {
+        insert(
+            &new_user,
+        ).into(
+            user::table,
+        ).execute(&conn)?;
+        
+        let user_new =user::table.order(
+            user::id.desc(),
+        ).limit(1).get_result::<User>(&conn)?;
+
+        let new_user_private = NewUserPrivate{
+            user_id: user_new.id,
+            password_hash: password_hash,
+            salt: salt,
+        };
+
+        insert(
+            &new_user_private,
+        ).into(
+            user_private::table,
+        ).execute(&conn)
+    }).chain_err(|| "unable to add new user")?;
     Ok(())
 }
 
-pub fn login(username: String, password: String) -> Result<u64, Error> {
-    let conn = get_conn().chain_err(|| "unable to get db connection")?;
-    let mut stmt = conn.prepare("SELECT id, password_hash, salt FROM user WHERE username = ?").chain_err(|| "unable to prepare statement")?;
+pub fn login(username: String, password: String) -> Result<i64, Error> {
+    let conn = get_diesel_conn()?;
+    let user_row = user::table.filter(
+        user::username.eq(&username),
+    ).get_result::<User>(
+        &conn
+    ).chain_err(|| {format!("user with username '{}' not found", &username)})?;
 
-    let (id, password_hash, salt): (u64, String, String) = stmt.query_row(
-        &[&username],
-        |row| {
-            let id: i64 = row.get(0);
-            (id as u64, row.get(1), row.get(2))
-        },
-    ).chain_err(|| "unable to get user stuff")?;
+    let user_private_row = user_private::table.filter(
+        user_private::user_id.eq(user_row.id)
+    ).get_result::<UserPrivate>(
+        &conn
+    ).chain_err(|| "unable to load user_private row")?;
 
-    let salted_password = format!("{}{}", password, salt);
+    let salted_password = format!("{}{}", password, user_private_row.salt);
 
     if bcrypt::verify(
         salted_password.as_str(),
-        password_hash.as_str(),
+        user_private_row.password_hash.as_str(),
     ).chain_err(|| "error while verifying hashed password")? {
-        Ok(id)
+        Ok(user_row.id)
     } else {
         Err("password does not match".into())
     }

@@ -1,13 +1,10 @@
-<html>
-    <head>
-        <title> {{username}}'s Gamelog </title>
-    </head>
-    <body>
-        <h1> {{username}}'s Gamelog </h1>
-        <ul>
-            {% for game_name in games  %}
-                <li>{{ game_name|e }}</li>
-            {% endfor %}
-        </ul>
-    </body>
-</html>
+{% extends "base.html" %}
+
+{% block body %}
+<h1> {{username}}'s Gamelog </h1>
+<ul>
+    {% for game_name in games  %}
+        <li>{{ game_name|e }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

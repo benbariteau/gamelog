@@ -41,10 +41,14 @@ mod errors {
     error_chain! { }
 }
 
+#[derive(Template)]
+#[template(path = "base.html")]
+struct BaseTemplate {}
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
 struct UserLogTemplate {
+    _parent: BaseTemplate,
     username: String,
     games: Vec<String>,
 }
@@ -77,6 +81,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     let user = itry!(model::get_user_from_id_or_name(user_string.to_string()), (status::NotFound, "User not found"));
 
     let template_context = UserLogTemplate {
+        _parent: BaseTemplate{},
         username: user.username,
         games: itry!(model::get_user_game_names(user.id)),
     };
@@ -152,6 +157,7 @@ fn user_profile_self(req: &mut Request) -> IronResult<Response> {
     let user = itry!(get_user_from_request(req));
 
     let template_context = UserLogTemplate {
+        _parent: BaseTemplate{},
         username: user.username,
         games: itry!(model::get_user_game_names(user.id)),
     };

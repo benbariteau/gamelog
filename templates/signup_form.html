@@ -1,18 +1,17 @@
-<html>
-    <head>
-        <title>signup</title>
-    </head>
-    <body>
-        <form method="post">
-            <div>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" />
-            </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" />
-            </div>
-            <button type="submit">Sign Up</button>
-        </form>
-    </body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Signup{% endblock %}
+
+{% block body %}
+<form method="post">
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" />
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" />
+    </div>
+    <button type="submit">Sign Up</button>
+</form>
+{% endblock %}

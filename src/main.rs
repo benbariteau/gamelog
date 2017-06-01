@@ -55,7 +55,9 @@ struct UserLogTemplate {
 
 #[derive(Template)]
 #[template(path = "signup_form.html")]
-struct SignupFormTemplate {}
+struct SignupFormTemplate {
+    _parent: BaseTemplate,
+}
 
 #[derive(Template)]
 #[template(path = "add_user_game_form.html")]
@@ -101,7 +103,9 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
 fn signup_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        SignupFormTemplate{}.render(),
+        SignupFormTemplate{
+            _parent: BaseTemplate{},
+        }.render(),
     ));
     response.headers.set(ContentType::html());
 

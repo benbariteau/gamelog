@@ -59,7 +59,9 @@ struct SignupFormTemplate {}
 
 #[derive(Template)]
 #[template(path = "add_user_game_form.html")]
-struct AddUserGameFormTemplate {}
+struct AddUserGameFormTemplate {
+    _parent: BaseTemplate,
+}
 
 fn home(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Welcome!")))
@@ -184,7 +186,9 @@ fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> erro
 fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        AddUserGameFormTemplate{}.render(),
+        AddUserGameFormTemplate{
+            _parent: BaseTemplate{},
+        }.render(),
     ));
     response.headers.set(ContentType::html());
 

@@ -60,6 +60,13 @@ struct SignupFormTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "login_form.html")]
+struct LoginFormTemplate {
+    _parent: BaseTemplate,
+}
+
+
+#[derive(Template)]
 #[template(path = "add_user_game_form.html")]
 struct AddUserGameFormTemplate {
     _parent: BaseTemplate,
@@ -104,6 +111,18 @@ fn signup_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         SignupFormTemplate{
+            _parent: BaseTemplate{},
+        }.render(),
+    ));
+    response.headers.set(ContentType::html());
+
+    Ok(response)
+}
+
+fn login_form(_: &mut Request) -> IronResult<Response> {
+    let mut response = Response::with((
+        status::Ok,
+        LoginFormTemplate{
             _parent: BaseTemplate{},
         }.render(),
     ));
@@ -227,9 +246,7 @@ fn main() {
     router.get("/log/:user", user_log, "user_log");
     router.get("/signup", signup_form, "signup_form");
     router.post("/signup", signup, "signup");
-    // signup and login are the same right now, the different URI allows them to act differently
-    // (POST to different locations)
-    router.get("/login", signup_form, "login_form");
+    router.get("/login", login_form, "login_form");
     router.post("/login", login, "login");
     router.get("/me", user_profile_self, "user_profile_self");
     router.get("/collection/add", add_user_game_form, "add_user_game_form");

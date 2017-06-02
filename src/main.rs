@@ -89,7 +89,13 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         )
     );
 
-    let user = itry!(model::get_user_from_id_or_name(user_string.to_string()), (status::NotFound, "User not found"));
+    let user = match user_string.parse::<i64>() {
+        Ok(user_id) => itry!(model::get_user_by_id(user_id)),
+        Err(_) => {
+            let user = itry!(model::get_user_by_name(user_string.to_string()));
+            return Ok(Response::with((status::SeeOther, RedirectRaw(format!("/log/{}", user.id)))))
+        }
+    };
 
     let template_context = UserLogTemplate {
         _parent: BaseTemplate{},

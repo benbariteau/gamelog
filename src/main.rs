@@ -178,25 +178,6 @@ fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
     model::get_user_by_name(username.clone()).chain_err(|| "can't get use from db")
 }
 
-fn user_profile_self(req: &mut Request) -> IronResult<Response> {
-    let user = itry!(get_user_from_request(req));
-
-    let template_context = UserLogTemplate {
-        _parent: BaseTemplate{},
-        username: user.username,
-        games: itry!(model::get_user_game_names(user.id)),
-    };
-
-    let mut response = Response::with((
-        status::Ok,
-        template_context.render(),
-    ));
-
-    response.headers.set(ContentType::html());
-
-    Ok(response)
-}
-
 fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> errors::Result<String> {
     match param_map.find(
         &[key.as_str()]
@@ -248,7 +229,6 @@ fn main() {
     router.post("/signup", signup, "signup");
     router.get("/login", login_form, "login_form");
     router.post("/login", login, "login");
-    router.get("/me", user_profile_self, "user_profile_self");
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
 

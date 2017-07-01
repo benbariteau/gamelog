@@ -6,11 +6,15 @@ extern crate params;
 extern crate rand;
 extern crate router;
 extern crate time;
+extern crate secure_session;
+extern crate typemap;
+extern crate serde;
 
 #[macro_use] extern crate askama;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;
 #[macro_use] extern crate error_chain;
+#[macro_use] extern crate serde_derive;
 
 #[macro_use(itry)] extern crate iron;
 
@@ -28,6 +32,10 @@ use iron_sessionstorage::SessionRequestExt;
 use iron_sessionstorage::SessionStorage;
 use iron_sessionstorage::Value;
 use iron_sessionstorage::backends::SignedCookieBackend;
+use secure_session::session::SessionManager;
+use secure_session::session::ChaCha20Poly1305SessionManager;
+use secure_session::middleware::SessionMiddleware;
+use secure_session::middleware::SessionConfig;
 use logger::Logger;
 use params::Params;
 use router::Router;
@@ -225,6 +233,17 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/me".to_string()))))
 }
 
+#[derive(Serialize, Deserialize)]
+struct Session {
+    user_id: i64
+}
+
+struct SessionKey {}
+
+impl typemap::Key for SessionKey {
+    type Value = Session;
+}
+
 fn main() {
     env_logger::init().unwrap();
 
@@ -239,8 +258,20 @@ fn main() {
     router.post("/collection/add", add_user_game, "add_user_game");
 
     let mut chain = Chain::new(router);
+
     chain.link(Logger::new(None));
+
     chain.link_around(SessionStorage::new(SignedCookieBackend::new(vec![1, 2, 3, 4])));
+
+    // TODO make password configurable
+    let session_manager = ChaCha20Poly1305SessionManager::<Session>::from_password(b"foo");
+    let session_config = SessionConfig::default();
+    chain.link_around(
+        SessionMiddleware::<Session, SessionKey, ChaCha20Poly1305SessionManager<Session>>::new(
+            session_manager,
+            session_config,
+        )
+    );
 
     Iron::new(chain).http("0.0.0.0:3000").unwrap();
 }

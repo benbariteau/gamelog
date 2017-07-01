@@ -1,6 +1,5 @@
 extern crate bcrypt;
 extern crate env_logger;
-extern crate iron_sessionstorage;
 extern crate logger;
 extern crate params;
 extern crate rand;
@@ -28,10 +27,6 @@ use iron::Response;
 use iron::headers::ContentType;
 use iron::modifiers::RedirectRaw;
 use iron::status;
-use iron_sessionstorage::SessionRequestExt;
-use iron_sessionstorage::SessionStorage;
-use iron_sessionstorage::Value;
-use iron_sessionstorage::backends::SignedCookieBackend;
 use secure_session::session::SessionManager;
 use secure_session::session::ChaCha20Poly1305SessionManager;
 use secure_session::middleware::SessionMiddleware;
@@ -161,18 +156,6 @@ fn signup(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
-struct UserSession {
-    username: String,
-}
-
-impl Value for UserSession {
-    fn get_key() -> &'static str { "user" }
-    fn into_raw(self) -> String { self.username }
-    fn from_raw(value: String) -> Option<Self> {
-        Some(UserSession{username: value})
-    }
-}
-
 fn login(req: &mut Request) -> IronResult<Response> {
     let (username, password) = itry!(get_username_and_password_from_request(req));
     let user_id = itry!(model::login(username.clone(), password));
@@ -255,8 +238,6 @@ fn main() {
     let mut chain = Chain::new(router);
 
     chain.link(Logger::new(None));
-
-    chain.link_around(SessionStorage::new(SignedCookieBackend::new(vec![1, 2, 3, 4])));
 
     // TODO make password configurable
     let session_manager = ChaCha20Poly1305SessionManager::<Session>::from_password(b"foo");

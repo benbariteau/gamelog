@@ -175,21 +175,16 @@ impl Value for UserSession {
 
 fn login(req: &mut Request) -> IronResult<Response> {
     let (username, password) = itry!(get_username_and_password_from_request(req));
-    itry!(model::login(username.clone(), password));
-    req.session().set(UserSession{username: username})?;
+    let user_id = itry!(model::login(username.clone(), password));
+    req.extensions.insert::<SessionKey>(Session{user_id: user_id});
 
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
 fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
-    let user_session_result = match req.session().get::<UserSession>() {
-        Ok(user_session) => Ok(user_session),
-        Err(_) => Err("unable to get user session"),
-    };
-    let user_session: Option<UserSession> = user_session_result?;
-    let username = user_session.ok_or::<Error>("no session".into())?.username;
+    let user_id = req.extensions.get::<SessionKey>().ok_or::<Error>("no session".into())?.user_id;
 
-    model::get_user_by_name(username.clone()).chain_err(|| "can't get use from db")
+    model::get_user_by_id(user_id).chain_err(|| "can't get user from database")
 }
 
 fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> errors::Result<String> {

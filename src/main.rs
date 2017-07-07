@@ -143,9 +143,9 @@ fn login_form(_: &mut Request) -> IronResult<Response> {
 fn get_user_signup_info(req: &mut Request) -> errors::Result<model::UserSignupInfo> {
     let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
 
-    let username = get_param_string_from_param_map(params, "username".to_string())?;
-    let email = get_param_string_from_param_map(params, "email".to_string())?;
-    let password = get_param_string_from_param_map(params, "password".to_string())?;
+    let username = get_param_string_from_param_map(params, "username")?;
+    let email = get_param_string_from_param_map(params, "email")?;
+    let password = get_param_string_from_param_map(params, "password")?;
 
     Ok(model::UserSignupInfo{
         username: username,
@@ -157,8 +157,8 @@ fn get_user_signup_info(req: &mut Request) -> errors::Result<model::UserSignupIn
 fn get_username_and_password_from_request(req: &mut Request) -> errors::Result<(String, String)> {
     let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
 
-    let username = get_param_string_from_param_map(params, "username".to_string())?;
-    let password = get_param_string_from_param_map(params, "password".to_string())?;
+    let username = get_param_string_from_param_map(params, "username")?;
+    let password = get_param_string_from_param_map(params, "password")?;
 
     Ok((username, password))
 }
@@ -184,9 +184,9 @@ fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
     model::get_user_by_id(user_id).chain_err(|| "can't get user from database")
 }
 
-fn get_param_string_from_param_map(param_map: &params::Map, key: String) -> errors::Result<String> {
+fn get_param_string_from_param_map(param_map: &params::Map, key: &str) -> errors::Result<String> {
     match param_map.find(
-        &[key.as_str()]
+        &[key]
     ).ok_or::<Error>(format!("{} not provided", key).into())? {
         &params::Value::String(ref value) => Ok(value.clone()),
         _ => Err("param isn't a string".into()),
@@ -208,9 +208,9 @@ fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
 fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let user = itry!(get_user_from_request(req));
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
-    let name = itry!(get_param_string_from_param_map(params, "name".to_string()));
+    let name = itry!(get_param_string_from_param_map(params, "name"));
     let game_id = itry!(model::upsert_game(name));
-    let state = itry!(get_param_string_from_param_map(params, "state".to_string()));
+    let state = itry!(get_param_string_from_param_map(params, "state"));
     itry!(
         model::add_user_game(model::NewUserGame{
             game_id: game_id,

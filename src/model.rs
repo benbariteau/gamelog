@@ -221,13 +221,49 @@ pub fn signup(user_signup_info: UserSignupInfo) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn login(username: String, password: String) -> Result<i64, Error> {
+pub struct LoginInfo {
+    pub username_or_email: String,
+    pub password: String,
+}
+
+fn get_user_from_email(email: String) -> Result<User, Error> {
     let conn = get_diesel_conn()?;
-    let user_row = user::table.filter(
-        user::username.eq(&username),
+    user::table.filter(
+        user::email.eq(&email),
     ).get_result::<User>(
         &conn
-    ).chain_err(|| {format!("user with username '{}' not found", &username)})?;
+    ).chain_err(|| {format!("user with email '{}' not found", &email)})
+}
+
+fn get_user_from_username_or_email(username_or_email: String) -> Result<User, Error> {
+    let conn = get_diesel_conn()?;
+    let user_row_result = user::table.filter(
+        user::username.eq(&username_or_email),
+    ).get_result::<User>(
+        &conn
+    );
+
+    match user_row_result {
+        Ok(user_row) => Ok(user_row),
+        Err(error) => {
+            match error {
+                diesel::result::Error::NotFound => {
+                    get_user_from_email(username_or_email)
+                },
+                _ => Err(
+                    Error::with_chain(
+                        error,
+                        format!("user with username '{}' not found", &username_or_email),
+                    )
+                ),
+            }
+        }
+    }
+}
+
+pub fn login(login_info: LoginInfo) -> Result<i64, Error> {
+    let conn = get_diesel_conn()?;
+    let user_row = get_user_from_username_or_email(login_info.username_or_email)?;
 
     let user_private_row = user_private::table.filter(
         user_private::user_id.eq(user_row.id)
@@ -235,7 +271,7 @@ pub fn login(username: String, password: String) -> Result<i64, Error> {
         &conn
     ).chain_err(|| "unable to load user_private row")?;
 
-    let salted_password = format!("{}{}", password, user_private_row.salt);
+    let salted_password = format!("{}{}", login_info.password, user_private_row.salt);
 
     if bcrypt::verify(
         salted_password.as_str(),

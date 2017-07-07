@@ -170,9 +170,21 @@ fn signup(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
+fn get_login_info_from_request(req: &mut Request) -> errors::Result<model::LoginInfo> {
+    let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
+
+    let username_or_email = get_param_string_from_param_map(params, "username-or-email")?;
+    let password = get_param_string_from_param_map(params, "password")?;
+
+    Ok(model::LoginInfo{
+        username_or_email: username_or_email,
+        password: password,
+    })
+}
+
 fn login(req: &mut Request) -> IronResult<Response> {
-    let (username, password) = itry!(get_username_and_password_from_request(req));
-    let user_id = itry!(model::login(username.clone(), password));
+    let login_info = itry!(get_login_info_from_request(req));
+    let user_id = itry!(model::login(login_info));
     req.extensions.insert::<SessionKey>(Session{user_id: user_id});
 
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))

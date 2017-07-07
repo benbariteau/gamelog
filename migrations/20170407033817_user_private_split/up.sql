@@ -1,4 +1,3 @@
--- Your SQL goes here
 CREATE TABLE user_new (
     id INTEGER PRIMARY KEY,
     username TEXT NOT NULL

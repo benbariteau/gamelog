@@ -154,15 +154,6 @@ fn get_user_signup_info(req: &mut Request) -> errors::Result<model::UserSignupIn
     })
 }
 
-fn get_username_and_password_from_request(req: &mut Request) -> errors::Result<(String, String)> {
-    let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
-
-    let username = get_param_string_from_param_map(params, "username")?;
-    let password = get_param_string_from_param_map(params, "password")?;
-
-    Ok((username, password))
-}
-
 fn signup(req: &mut Request) -> IronResult<Response> {
     let user_signup_info = itry!(get_user_signup_info(req));
     itry!(model::signup(user_signup_info));

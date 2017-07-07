@@ -31,6 +31,7 @@ mod schema {
         user {
             id -> BigInt,
             username -> VarChar,
+            email -> VarChar,
         }
     }
     table! {
@@ -86,6 +87,7 @@ pub struct NewUserGame {
 #[table_name="user"]
 struct NewUser {
     username: String,
+    email: String,
 }
 
 #[derive(Insertable)]
@@ -163,7 +165,15 @@ pub fn get_user_game_names(user_id: i64) -> Result<Vec<String>, Error> {
     Ok(game_names)
 }
 
-pub fn signup(username: String, password: String) -> Result<(), Error> {
+
+pub struct UserSignupInfo{
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
+
+
+pub fn signup(user_signup_info: UserSignupInfo) -> Result<(), Error> {
     let mut rng = OsRng::new().chain_err(|| "unable to create rng")?;
     let mut salt_bytes: Vec<u8> = vec![0; 16];
     rng.fill_bytes(&mut salt_bytes);
@@ -172,7 +182,7 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
         write!(&mut salt, "{:X}", byte).unwrap();
     }
 
-    let salted_password = format!("{}{}", password, salt);
+    let salted_password = format!("{}{}", user_signup_info.password, salt);
     let password_hash_result = bcrypt::hash(
         salted_password.as_str(),
         bcrypt::DEFAULT_COST,
@@ -180,7 +190,11 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
     let password_hash: String = password_hash_result.chain_err(|| "unable to hash password")?;
 
     let conn = get_diesel_conn()?;
-    let new_user = NewUser{username: username};
+    let new_user = NewUser{
+        username: user_signup_info.username,
+        email: user_signup_info.email,
+    };
+
     conn.transaction(|| {
         diesel::insert(
             &new_user,
@@ -188,7 +202,7 @@ pub fn signup(username: String, password: String) -> Result<(), Error> {
             user::table,
         ).execute(&conn)?;
         
-        let user_new =user::table.order(
+        let user_new = user::table.order(
             user::id.desc(),
         ).limit(1).get_result::<User>(&conn)?;
 

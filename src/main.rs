@@ -140,6 +140,20 @@ fn login_form(_: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn get_user_signup_info(req: &mut Request) -> errors::Result<model::UserSignupInfo> {
+    let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
+
+    let username = get_param_string_from_param_map(params, "username".to_string())?;
+    let email = get_param_string_from_param_map(params, "email".to_string())?;
+    let password = get_param_string_from_param_map(params, "password".to_string())?;
+
+    Ok(model::UserSignupInfo{
+        username: username,
+        email: email,
+        password: password,
+    })
+}
+
 fn get_username_and_password_from_request(req: &mut Request) -> errors::Result<(String, String)> {
     let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
 
@@ -150,8 +164,8 @@ fn get_username_and_password_from_request(req: &mut Request) -> errors::Result<(
 }
 
 fn signup(req: &mut Request) -> IronResult<Response> {
-    let (username, password) = itry!(get_username_and_password_from_request(req));
-    itry!(model::signup(username, password));
+    let user_signup_info = itry!(get_user_signup_info(req));
+    itry!(model::signup(user_signup_info));
 
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }

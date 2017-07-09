@@ -1,4 +1,5 @@
 CREATE TABLE user (
     id INTEGER PRIMARY KEY,
-    username TEXT NOT NULL
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
 );

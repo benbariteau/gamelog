@@ -7,6 +7,24 @@ use errors::ResultExt;
 use futures::Future;
 use futures::Stream;
 
+#[derive(Serialize, Deserialize)]
+struct Game {
+    appid: u64,
+    playtime_forever: u64,
+    playtime_2weeks: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct OwnedGames {
+    game_count: u64,
+    games: Vec<Game>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct OwnedGamesResponse {
+    response: OwnedGames
+}
+
 pub(crate) fn sync() -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
     let mut core = tokio_core::reactor::Core::new().chain_err(|| "unable to intialize tokio core")?;
@@ -19,7 +37,7 @@ pub(crate) fn sync() -> Result<(), errors::Error> {
         ).parse().chain_err(|| "unable to parse url")?
     ).and_then(|res| res.body().concat2());
     let body = core.run(response_future).chain_err(|| "unable to reap future")?;
-    let thing: serde_json::Value = serde_json::from_slice(&body.to_vec()).chain_err(|| "unable to parse json")?;
+    let thing: OwnedGamesResponse = serde_json::from_slice(&body.to_vec()).chain_err(|| "unable to parse json")?;
     println!("{}", serde_json::to_string(&thing).chain_err(|| "unable to dump to json")?);
     Ok(())
 }

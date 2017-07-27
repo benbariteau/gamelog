@@ -1,4 +1,5 @@
 CREATE TABLE game (
     id INTEGER PRIMARY KEY,
-    name TEXT
+    name TEXT NOT NULL,
+    steam_id INTEGER
 );

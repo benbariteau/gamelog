@@ -46,6 +46,7 @@ mod schema {
         game {
             id -> BigInt,
             name -> VarChar,
+            steam_id -> Nullable<BigInt>,
         }
     }
     table! {
@@ -117,6 +118,7 @@ pub struct User {
 pub struct Game {
     pub id: i64,
     pub name: String,
+    pub steam_id: Option<u64>,
 }
 
 #[derive(Insertable)]

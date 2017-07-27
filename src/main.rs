@@ -46,6 +46,8 @@ use errors::ResultExt;
 
 mod secrets;
 use secrets::get_secrets;
+mod steam;
+use steam::sync as steam_sync;
 
 mod model;
 
@@ -302,15 +304,11 @@ fn webapp() {
     Iron::new(chain).http("0.0.0.0:3000").unwrap();
 }
 
-fn steam_sync() {
-    println!("foo");
-}
-
 fn main() {
     let arg = std::env::args().nth(1).unwrap();
     match arg.as_str() {
         "webapp" => webapp(),
-        "steam-sync" => steam_sync(),
+        "steam-sync" => steam_sync().unwrap(),
         _ => {
             eprintln!("unrecognized argument");
         }

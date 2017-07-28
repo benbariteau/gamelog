@@ -203,8 +203,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
 fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let user = {
         let session = try_session!(req);
-        let user = itry!(get_user_from_session(session));
-        user
+        itry!(get_user_from_session(session))
     };
 
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));

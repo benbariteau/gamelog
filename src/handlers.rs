@@ -200,9 +200,9 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
 }
 
 fn add_user_game(req: &mut Request) -> IronResult<Response> {
-    redirect_logged_out_user!(req);
+    let session = try_session!(req);
 
-    let user = itry!(get_user_from_request(req));
+    let user = itry!(get_user_from_session(session));
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
     let name = itry!(get_param_string_from_param_map(params, "name"));
     let game_id = itry!(model::upsert_game(name));

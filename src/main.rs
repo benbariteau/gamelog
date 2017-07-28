@@ -61,10 +61,10 @@ struct BaseTemplate {}
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
-struct UserLogTemplate {
+struct UserLogTemplate<'a> {
     _parent: BaseTemplate,
     username: String,
-    games: Vec<String>,
+    games: Vec<GameNameAndPlayState<'a>>,
 }
 
 #[derive(Template)]
@@ -84,6 +84,11 @@ struct LoginFormTemplate {
 #[template(path = "add_user_game_form.html")]
 struct AddUserGameFormTemplate {
     _parent: BaseTemplate,
+}
+
+struct GameNameAndPlayState<'a> {
+    name: &'a String,
+    play_state: &'a String,
 }
 
 fn home(_: &mut Request) -> IronResult<Response> {
@@ -111,10 +116,19 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         }
     };
 
+    let user_games_with_names = itry!(model::get_user_games_with_names(user.id));
+    let games = user_games_with_names.iter().map(move |game_info| {
+        let &(ref name, ref game) = game_info;
+        GameNameAndPlayState{
+            name: name,
+            play_state: &game.play_state,
+        }
+    }).collect();
+
     let template_context = UserLogTemplate {
         _parent: BaseTemplate{},
         username: user.username,
-        games: itry!(model::get_user_game_names(user.id)),
+        games: games,
     };
 
     let mut response = Response::with((

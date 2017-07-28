@@ -5,8 +5,8 @@
 {% block body %}
 <h1> {{username}}'s Gamelog </h1>
 <ul>
-    {% for game_name in games  %}
-        <li>{{ game_name|e }}</li>
+    {% for game in games %}
+        <li>{{ game.name|e }} ({{ game.play_state|e }})</li>
     {% endfor %}
 </ul>
 {% endblock %}

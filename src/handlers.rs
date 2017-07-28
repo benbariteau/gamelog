@@ -1,8 +1,5 @@
 use askama::Template;
 use askama;
-use futures::Future;
-use futures::Stream;
-use hyper;
 use iron::IronResult;
 use iron::Plugin;
 use iron::Request;
@@ -12,20 +9,16 @@ use iron::modifiers::RedirectRaw;
 use iron::status;
 use params::Params;
 use router::Router;
-use serde_json;
 use std;
 use time;
-use tokio_core;
 
 use errors::Error;
 use errors::ResultExt;
 use errors;
 use helpers::get_param_string_from_param_map;
-use helpers::get_user_from_request;
 use helpers::get_user_from_session;
 use helpers::get_user_signup_info;
 use model;
-use secrets::get_secrets;
 use session::Session;
 use session::SessionKey;
 

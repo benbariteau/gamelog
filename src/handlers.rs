@@ -40,6 +40,15 @@ macro_rules! try_session {
     );
 }
 
+macro_rules! redirect_logged_out_user {
+    ( $req : expr ) => (
+        {
+            let _ = try_session!($req);
+        }
+    )
+}
+
+
 #[derive(Template)]
 #[template(path = "base.html")]
 struct BaseTemplate {}
@@ -176,7 +185,9 @@ fn login(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
-fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
+fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
+    redirect_logged_out_user!(req);
+
     let mut response = Response::with((
         status::Ok,
         AddUserGameFormTemplate{
@@ -189,6 +200,8 @@ fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
 }
 
 fn add_user_game(req: &mut Request) -> IronResult<Response> {
+    redirect_logged_out_user!(req);
+
     let user = itry!(get_user_from_request(req));
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
     let name = itry!(get_param_string_from_param_map(params, "name"));

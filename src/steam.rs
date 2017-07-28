@@ -8,6 +8,7 @@ use futures::Future;
 use futures::Stream;
 use model;
 use time;
+use serde;
 
 #[derive(Serialize, Deserialize)]
 struct Game {
@@ -31,11 +32,13 @@ struct OwnedGamesResponse {
     response: OwnedGames
 }
 
-fn request(url: String) -> Result<hyper::Chunk, errors::Error> {
+fn request<T>(url: String) -> Result<T, errors::Error> where for<'a> T: serde::Deserialize<'a> {
     let mut core = tokio_core::reactor::Core::new().chain_err(|| "unable to intialize tokio core")?;
     let client = hyper::Client::new(&core.handle());
     let response_future = client.get(url.parse().chain_err(|| "unable to parse url")?).and_then(|res| res.body().concat2());
-    core.run(response_future).chain_err(|| "unable to reap future")
+    let chunk = core.run(response_future).chain_err(|| "unable to reap future")?;
+
+    serde_json::from_reader(chunk.as_ref()).chain_err(|| "unable to parse json")
 }
 
 pub fn sync() -> Result<(), errors::Error> {
@@ -50,15 +53,13 @@ pub fn sync() -> Result<(), errors::Error> {
 
 fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
-    let owned_games_response: OwnedGamesResponse = serde_json::from_slice(
-        request(
-            format!(
-                "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
-                secrets.steam_api_key,
-                steam_id,
-            )
-        )?.as_ref()
-    ).chain_err(|| "unable to parse owned games reponse json")?;
+    let owned_games_response: OwnedGamesResponse = request(
+        format!(
+            "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
+            secrets.steam_api_key,
+            steam_id,
+        )
+    )?;
 
     for game in owned_games_response.response.games {
         let game_id = upsert_game(&game)?;

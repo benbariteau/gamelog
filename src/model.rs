@@ -144,21 +144,21 @@ pub fn get_user_by_id(user_id: i64) -> Result<User, Error> {
     let conn = get_diesel_conn()?;
     user::table.filter(
         user::id.eq(user_id)
-    ).get_result::<User>(&conn).chain_err(|| "unable to load user")
+    ).get_result(&conn).chain_err(|| "unable to load user")
 }
 
 pub fn get_user_by_name(username: String) -> Result<User, Error> {
     let conn = get_diesel_conn()?;
     user::table.filter(
         user::username.eq(username)
-    ).get_result::<User>(&conn).chain_err(|| "unable to load user")
+    ).get_result(&conn).chain_err(|| "unable to load user")
 }
 
 pub fn get_user_games(user_id: i64) -> Result<Vec<UserGame>, Error> {
     let conn = get_diesel_conn().chain_err(|| "unable to get db connection")?;
     schema::user_game::table.filter(
         schema::user_game::user_id.eq(user_id),
-    ).load::<UserGame>(&conn).chain_err(|| "unable to load user games")
+    ).load(&conn).chain_err(|| "unable to load user games")
 }
 
 pub fn get_user_games_with_names(user_id: i64) -> Result<Vec<(String, UserGame)>, Error> {
@@ -166,9 +166,9 @@ pub fn get_user_games_with_names(user_id: i64) -> Result<Vec<(String, UserGame)>
 
     let game_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.game_id).collect();
     let conn = get_diesel_conn()?;
-    let games = game::table.filter(
+    let games: Vec<Game> = game::table.filter(
         game::id.eq_any(game_ids),
-    ).load::<Game>(
+    ).load(
         &conn,
     ).chain_err(|| "unable to get game names")?;
     let user_games_with_names = games.iter().map(|game| game.name.clone()).zip(user_games).collect();
@@ -213,9 +213,9 @@ pub fn signup(user_signup_info: UserSignupInfo) -> Result<(), Error> {
             user::table,
         ).execute(&conn)?;
         
-        let user_new = user::table.order(
+        let user_new: User = user::table.order(
             user::id.desc(),
-        ).limit(1).get_result::<User>(&conn)?;
+        ).limit(1).get_result(&conn)?;
 
         let new_user_private = NewUserPrivate{
             user_id: user_new.id,
@@ -246,7 +246,7 @@ fn get_user_from_email(email: String) -> Result<User, Error> {
     let conn = get_diesel_conn()?;
     user::table.filter(
         user::email.eq(&email),
-    ).get_result::<User>(
+    ).get_result(
         &conn
     ).chain_err(|| {format!("user with email '{}' not found", &email)})
 }
@@ -255,7 +255,7 @@ fn get_user_from_username_or_email(username_or_email: String) -> Result<User, Er
     let conn = get_diesel_conn()?;
     let user_row_result = user::table.filter(
         user::username.eq(&username_or_email),
-    ).get_result::<User>(
+    ).get_result(
         &conn
     );
 
@@ -281,9 +281,9 @@ pub fn login(login_info: LoginInfo) -> Result<i64, Error> {
     let conn = get_diesel_conn()?;
     let user_row = get_user_from_username_or_email(login_info.username_or_email)?;
 
-    let user_private_row = user_private::table.filter(
+    let user_private_row: UserPrivate = user_private::table.filter(
         user_private::user_id.eq(user_row.id)
-    ).get_result::<UserPrivate>(
+    ).get_result(
         &conn
     ).chain_err(|| "unable to load user_private row")?;
 
@@ -305,9 +305,7 @@ fn get_game_by_name_with_conn(
 ) -> Result<Game, diesel::result::Error> {
     game::table.filter(
         game::name.eq(name),
-    ).get_result::<Game>(
-        conn,
-    )
+    ).get_result(conn)
 }
 
 fn get_optional_game_by_name(name: &String) -> Result<Option<Game>, Error> {
@@ -323,7 +321,7 @@ fn get_game_by_name(name: &String) -> Result<Game, Error> {
 pub fn get_game_by_steam_id(steam_id: u64) -> Result<Game, Error> {
     game::table.filter(
         game::steam_id.eq(steam_id as i64),
-    ).get_result::<Game>(
+    ).get_result(
         &get_diesel_conn()?,
     ).chain_err(|| "can't load game")
 }

@@ -33,6 +33,7 @@ mod schema {
             id -> BigInt,
             username -> VarChar,
             email -> VarChar,
+            steam_id -> Nullable<VarChar>,
         }
     }
     table! {
@@ -90,6 +91,7 @@ pub struct NewUserGame {
 struct NewUser {
     username: String,
     email: String,
+    steam_id: Option<String>,
 }
 
 #[derive(Insertable)]
@@ -113,6 +115,7 @@ pub struct User {
     pub id: i64,
     pub username: String,
     pub email: String,
+    pub steam_id: Option<String>,
 }
 
 #[derive(Queryable)]
@@ -197,6 +200,7 @@ pub fn signup(user_signup_info: UserSignupInfo) -> Result<(), Error> {
     let new_user = NewUser{
         username: user_signup_info.username,
         email: user_signup_info.email,
+        steam_id: None,
     };
 
     conn.transaction(|| {

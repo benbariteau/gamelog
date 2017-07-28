@@ -118,13 +118,15 @@ pub struct User {
 pub struct Game {
     pub id: i64,
     pub name: String,
-    pub steam_id: Option<u64>,
+    // TODO make this into a u64
+    pub steam_id: Option<i64>,
 }
 
 #[derive(Insertable)]
 #[table_name="game"]
-struct NewGame {
-    name: String,
+pub struct NewGame {
+    pub name: String,
+    pub steam_id: Option<i64>,
 }
 
 fn get_diesel_conn() -> Result<SqliteConnection, Error> {
@@ -306,6 +308,28 @@ fn get_game_by_name(name: &String) -> Result<Game, Error> {
     get_game_by_name_with_conn(name, &conn).chain_err(|| "unable to load game")
 }
 
+pub fn get_game_by_steam_id(steam_id: u64) -> Result<Game, Error> {
+    game::table.filter(
+        game::steam_id.eq(steam_id as i64),
+    ).get_result::<Game>(
+        &get_diesel_conn()?,
+    ).chain_err(|| "can't load game")
+}
+
+pub fn insert_game(game: NewGame) -> Result<i64, Error> {
+    let conn = get_diesel_conn()?;
+
+    diesel::insert(
+        &game,
+    ).into(
+        game::table,
+    ).execute(
+        &conn
+    ).chain_err(|| "unable to insert new game")?;
+
+    Ok(get_game_by_name(&game.name)?.id)
+}
+
 pub fn upsert_game(name: String) -> Result<i64, Error> {
     match get_optional_game_by_name(&name)? {
         Some(game_row) => {
@@ -313,20 +337,12 @@ pub fn upsert_game(name: String) -> Result<i64, Error> {
         },
         None => {},
     }
-
-    let conn = get_diesel_conn()?;
-
-    diesel::insert(
-        &NewGame{
+    insert_game(
+        NewGame{
             name: name.clone(),
-        },
-    ).into(
-        game::table,
-    ).execute(
-        &conn
-    ).chain_err(|| "unable to insert new game")?;
-
-    Ok(get_game_by_name(&name)?.id)
+            steam_id: None,
+        }
+    )
 }
 
 pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {

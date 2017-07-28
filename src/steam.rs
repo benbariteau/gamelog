@@ -31,12 +31,11 @@ struct OwnedGamesResponse {
     response: OwnedGames
 }
 
-fn request(url: String) -> Result<OwnedGamesResponse, errors::Error> {
+fn request(url: String) -> Result<hyper::Chunk, errors::Error> {
     let mut core = tokio_core::reactor::Core::new().chain_err(|| "unable to intialize tokio core")?;
     let client = hyper::Client::new(&core.handle());
     let response_future = client.get(url.parse().chain_err(|| "unable to parse url")?).and_then(|res| res.body().concat2());
-    let body = core.run(response_future).chain_err(|| "unable to reap future")?;
-    serde_json::from_slice(&body.to_vec()).chain_err(|| "unable to parse json")
+    core.run(response_future).chain_err(|| "unable to reap future")
 }
 
 pub fn sync() -> Result<(), errors::Error> {
@@ -51,13 +50,15 @@ pub fn sync() -> Result<(), errors::Error> {
 
 fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
-    let owned_games_response: OwnedGamesResponse = request(
-        format!(
-            "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
-            secrets.steam_api_key,
-            steam_id,
-        )
-    )?;
+    let owned_games_response: OwnedGamesResponse = serde_json::from_slice(
+        request(
+            format!(
+                "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
+                secrets.steam_api_key,
+                steam_id,
+            )
+        )?.as_ref()
+    ).chain_err(|| "unable to parse owned games reponse json")?;
 
     for game in owned_games_response.response.games {
         let game_id = upsert_game(&game)?;

@@ -22,6 +22,7 @@ use errors::ResultExt;
 use errors;
 use helpers::get_param_string_from_param_map;
 use helpers::get_user_from_request;
+use helpers::get_user_from_session;
 use helpers::get_user_signup_info;
 use model;
 use secrets::get_secrets;
@@ -200,9 +201,12 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
 }
 
 fn add_user_game(req: &mut Request) -> IronResult<Response> {
-    let session = try_session!(req);
+    let user = {
+        let session = try_session!(req);
+        let user = itry!(get_user_from_session(session));
+        user
+    };
 
-    let user = itry!(get_user_from_session(session));
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
     let name = itry!(get_param_string_from_param_map(params, "name"));
     let game_id = itry!(model::upsert_game(name));

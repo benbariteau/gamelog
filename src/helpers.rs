@@ -7,6 +7,7 @@ use errors::Error;
 use errors::ResultExt;
 use errors;
 use model;
+use session::Session;
 use session::SessionKey;
 
 pub fn get_user_signup_info(req: &mut Request) -> Result<model::UserSignupInfo, Error> {
@@ -30,7 +31,7 @@ pub fn get_user_from_session(session: &Session) -> Result<model::User, Error> {
 pub fn get_user_from_request(req: &Request) -> Result<model::User, Error> {
     let session = req.extensions.get::<SessionKey>().ok_or::<Error>("no session".into())?;
 
-    model::get_user_from_session(session)
+    get_user_from_session(session)
 }
 
 pub fn get_param_string_from_param_map(param_map: &params::Map, key: &str) -> errors::Result<String> {

@@ -8,6 +8,7 @@ use futures::Future;
 use futures::Stream;
 use model;
 use serde;
+use time;
 
 #[derive(Serialize, Deserialize)]
 struct Game {
@@ -45,24 +46,38 @@ pub(crate) fn sync() -> Result<(), errors::Error> {
         format!(
             "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
             secrets.steam_api_key,
+            // TODO don't hardcode this
             "76561197976392138",
         )
     )?;
 
     for game in owned_games_response.response.games {
-        upsert_game(game, &secrets.steam_api_key);
-        // upsert user_game row
+        let game_id = upsert_game(&game)?;
+        let has_played = game.playtime_forever > 0;
+        let play_state = if has_played { "unfinished" } else { "unplayed" }.to_string();
+        let start_date = if has_played { Some(time::get_time().sec) } else { None };
+        model::upsert_user_game(
+            model::NewUserGame{
+                // TODO don't harcode this
+                user_id: 1,
+                game_id: game_id,
+                play_state: play_state,
+                acquisition_date: time::get_time().sec,
+                start_date: start_date,
+                beat_date: None,
+            }
+        ).chain_err(|| "unable to upsert game")?;
     }
     Ok(())
 }
 
-fn upsert_game(game: Game, steam_api_key: &String) -> Result<i64, errors::Error> {
+fn upsert_game(game: &Game) -> Result<i64, errors::Error> {
     match model::get_game_by_steam_id(game.appid) {
         Ok(game) => Ok(game.id),
         Err(_) => {
             model::insert_game(
                 model::NewGame{
-                    name: game.name,
+                    name: game.name.clone(),
                     steam_id: Some(game.appid as i64),
                 },
             ).chain_err(|| "unable to insert game")

@@ -13,6 +13,7 @@ use diesel::sqlite::SqliteConnection;
 use diesel;
 use rand::OsRng;
 use rand::Rng;
+use diesel::BoolExpressionMethods;
 
 use self::errors::Error;
 use self::errors::ResultExt;
@@ -343,6 +344,46 @@ pub fn upsert_game(name: String) -> Result<i64, Error> {
             steam_id: None,
         }
     )
+}
+
+fn get_user_game_by_user_id_and_game_id(user_id: i64, game_id: i64) -> Result<UserGame, Error> {
+    let conn = get_diesel_conn()?;
+    user_game::table.filter(
+        user_game::user_id.eq(user_id).and(
+            user_game::game_id.eq(game_id)
+        )
+    ).get_result(&conn).chain_err(|| "unable to find user game")
+}
+
+pub fn upsert_user_game(user_game: NewUserGame) -> Result<(), Error> {
+    match get_user_game_by_user_id_and_game_id(user_game.user_id, user_game.game_id) {
+        Ok(mut game) => {
+            game.play_state = user_game.play_state;
+            game.acquisition_date = user_game.acquisition_date;
+            game.start_date = user_game.start_date;
+            game.beat_date = user_game.beat_date;
+            update_user_game(game)
+        },
+        Err(_) => add_user_game(user_game)
+    }
+}
+
+fn update_user_game(game: UserGame) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    diesel::update(
+        user_game::table.filter(
+            user_game::id.eq(game.id),
+        )
+    ).set((
+        user_game::play_state.eq(game.play_state),
+        user_game::acquisition_date.eq(game.acquisition_date),
+        user_game::start_date.eq(game.start_date),
+        user_game::beat_date.eq(game.beat_date),
+    )).execute(
+        &conn,
+    ).chain_err(|| "unable to update user_game row")?;
+
+    Ok(())
 }
 
 pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {

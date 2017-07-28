@@ -20,13 +20,25 @@ use tokio_core;
 use errors::Error;
 use errors::ResultExt;
 use errors;
+use helpers::get_param_string_from_param_map;
 use helpers::get_user_from_request;
 use helpers::get_user_signup_info;
-use helpers::get_param_string_from_param_map;
 use model;
 use secrets::get_secrets;
 use session::Session;
 use session::SessionKey;
+
+
+macro_rules! try_session {
+    ( $req : expr ) => (
+        match $req.extensions.get::<SessionKey>() {
+            Some(session) => session,
+            None => return Ok(Response::with(
+                (status::SeeOther, RedirectRaw("/login".to_string()))
+            )),
+        }
+    );
+}
 
 #[derive(Template)]
 #[template(path = "base.html")]
@@ -220,14 +232,10 @@ fn steam_collection(_: &mut Request) -> IronResult<Response> {
 }
 
 fn me(req: &mut Request) -> IronResult<Response> {
-    match req.extensions.get::<SessionKey>() {
-        Some(session) => Ok(Response::with(
-            (status::SeeOther, RedirectRaw(format!("/log/{}", session.user_id)))
-        )),
-        None => Ok(Response::with(
-            (status::SeeOther, RedirectRaw("/login".to_string()))
-        )),
-    }
+    let session = try_session!(req);
+    Ok(Response::with(
+        (status::SeeOther, RedirectRaw(format!("/log/{}", session.user_id)))
+    ))
 }
 
 pub fn routes() -> Router {

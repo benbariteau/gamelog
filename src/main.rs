@@ -33,7 +33,6 @@ mod secrets;
 mod steam;
 mod handlers;
 mod model;
-mod templates;
 
 use handlers::Session;
 use handlers::SessionKey;

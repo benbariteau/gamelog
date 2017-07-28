@@ -13,16 +13,17 @@ use params::Params;
 use params;
 use router::Router;
 use serde_json;
+use std;
 use time;
 use tokio_core;
 use typemap;
 
+use askama;
 use errors::Error;
 use errors::ResultExt;
 use errors;
 use model;
 use secrets::get_secrets;
-use templates;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Session {
@@ -33,6 +34,41 @@ pub(crate) struct SessionKey {}
 
 impl typemap::Key for SessionKey {
     type Value = Session;
+}
+
+#[derive(Template)]
+#[template(path = "base.html")]
+struct BaseTemplate {}
+
+#[derive(Template)]
+#[template(path = "user_log.html")]
+struct UserLogTemplate<'a> {
+    _parent: BaseTemplate,
+    username: String,
+    games: Vec<GameNameAndPlayState<'a>>,
+}
+
+#[derive(Template)]
+#[template(path = "signup_form.html")]
+struct SignupFormTemplate {
+    _parent: BaseTemplate,
+}
+
+#[derive(Template)]
+#[template(path = "login_form.html")]
+struct LoginFormTemplate {
+    _parent: BaseTemplate,
+}
+
+#[derive(Template)]
+#[template(path = "add_user_game_form.html")]
+struct AddUserGameFormTemplate {
+    _parent: BaseTemplate,
+}
+
+struct GameNameAndPlayState<'a> {
+    name: &'a String,
+    play_state: &'a String,
 }
 
 fn home(_: &mut Request) -> IronResult<Response> {
@@ -63,14 +99,14 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     let user_games_with_names = itry!(model::get_user_games_with_names(user.id));
     let games = user_games_with_names.iter().map(|game_info| {
         let &(ref name, ref game) = game_info;
-        templates::GameNameAndPlayState{
+        GameNameAndPlayState{
             name: name,
             play_state: &game.play_state,
         }
     }).collect();
 
-    let template_context = templates::UserLog {
-        _parent: templates::Base{},
+    let template_context = UserLogTemplate {
+        _parent: BaseTemplate{},
         username: user.username,
         games: games,
     };
@@ -88,8 +124,8 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
 fn signup_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        templates::SignupForm{
-            _parent: templates::Base{},
+        SignupFormTemplate{
+            _parent: BaseTemplate{},
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -100,8 +136,8 @@ fn signup_form(_: &mut Request) -> IronResult<Response> {
 fn login_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        templates::LoginForm{
-            _parent: templates::Base{},
+        LoginFormTemplate{
+            _parent: BaseTemplate{},
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -168,8 +204,8 @@ fn get_param_string_from_param_map(param_map: &params::Map, key: &str) -> errors
 fn add_user_game_form(_: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        templates::AddUserGameForm{
-            _parent: templates::Base{},
+        AddUserGameFormTemplate{
+            _parent: BaseTemplate{},
         }.render(),
     ));
     response.headers.set(ContentType::html());

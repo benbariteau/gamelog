@@ -21,11 +21,7 @@ use self::schema::game;
 use self::schema::user;
 use self::schema::user_game;
 use self::schema::user_private;
-
-
-mod errors {
-    error_chain! { }
-}
+use errors;
 
 mod schema {
     table! {

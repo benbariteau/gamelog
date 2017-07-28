@@ -221,29 +221,6 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/me".to_string()))))
 }
 
-fn steam_collection(_: &mut Request) -> IronResult<Response> {
-    let secrets = itry!(get_secrets());
-    let mut core = itry!(tokio_core::reactor::Core::new());
-    let client = hyper::Client::new(&core.handle());
-    let response_future = client.get(
-        itry!(
-            format!(
-                "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&format=json",
-                secrets.steam_api_key,
-                "76561197976392138",
-            ).parse()
-        )
-    ).and_then(|res| res.body().concat2());
-    let body = itry!(core.run(response_future));
-    let thing: serde_json::Value = itry!(serde_json::from_slice(&body.to_vec()));
-
-    Ok(
-        Response::with(
-            (status::Ok, itry!(serde_json::to_string(&thing))),
-        )
-    )
-}
-
 fn me(req: &mut Request) -> IronResult<Response> {
     let session = try_session!(req);
     Ok(Response::with(
@@ -262,7 +239,6 @@ pub fn routes() -> Router {
     router.post("/login", login, "login");
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
-    router.get("/collection/steam", steam_collection, "steam_collection");
 
     router
 }

@@ -7,7 +7,6 @@ use errors::ResultExt;
 use futures::Future;
 use futures::Stream;
 use model;
-use serde;
 use time;
 
 #[derive(Serialize, Deserialize)]

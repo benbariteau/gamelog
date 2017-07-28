@@ -170,22 +170,6 @@ pub fn get_user_games_with_names(user_id: i64) -> Result<Vec<(String, UserGame)>
     Ok(user_games_with_names)
 }
 
-pub fn get_user_game_names(user_id: i64) -> Result<Vec<String>, Error> {
-    let user_games = get_user_games(user_id)?;
-
-    let game_ids: Vec<i64> = user_games.iter().map(|user_game| user_game.game_id).collect();
-    let conn = get_diesel_conn()?;
-    let games = game::table.filter(
-        game::id.eq_any(game_ids),
-    ).load::<Game>(
-        &conn,
-    ).chain_err(|| "unable to get game names")?;
-    let game_names = games.iter().map(|game| game.name.clone()).collect();
-
-    Ok(game_names)
-}
-
-
 pub struct UserSignupInfo{
     pub username: String,
     pub email: String,

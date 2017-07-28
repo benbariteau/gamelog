@@ -117,7 +117,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     };
 
     let user_games_with_names = itry!(model::get_user_games_with_names(user.id));
-    let games = user_games_with_names.iter().map(move |game_info| {
+    let games = user_games_with_names.iter().map(|game_info| {
         let &(ref name, ref game) = game_info;
         GameNameAndPlayState{
             name: name,

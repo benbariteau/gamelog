@@ -234,6 +234,11 @@ pub struct LoginInfo {
     pub password: String,
 }
 
+pub fn get_all_users() -> Result<Vec<User>, Error> {
+    let conn = get_diesel_conn()?;
+    user::table.load(&conn).chain_err(|| "can't load users")
+}
+
 fn get_user_from_email(email: String) -> Result<User, Error> {
     let conn = get_diesel_conn()?;
     user::table.filter(

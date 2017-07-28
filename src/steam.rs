@@ -39,14 +39,23 @@ fn request(url: String) -> Result<OwnedGamesResponse, errors::Error> {
     serde_json::from_slice(&body.to_vec()).chain_err(|| "unable to parse json")
 }
 
-pub(crate) fn sync() -> Result<(), errors::Error> {
+pub fn sync() -> Result<(), errors::Error> {
+    let users = model::get_all_users().chain_err(|| "unable to load all users")?;
+    for user in users {
+        if let Some(steam_id) = user.steam_id {
+            sync_user(user.id, steam_id)?;
+        }
+    }
+    Ok(())
+}
+
+fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
     let owned_games_response: OwnedGamesResponse = request(
         format!(
             "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
             secrets.steam_api_key,
-            // TODO don't hardcode this
-            "76561197976392138",
+            steam_id,
         )
     )?;
 
@@ -58,7 +67,7 @@ pub(crate) fn sync() -> Result<(), errors::Error> {
         model::upsert_user_game(
             model::NewUserGame{
                 // TODO don't harcode this
-                user_id: 1,
+                user_id: user_id,
                 game_id: game_id,
                 play_state: play_state,
                 acquisition_date: time::get_time().sec,

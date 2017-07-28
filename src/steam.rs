@@ -32,7 +32,7 @@ struct OwnedGamesResponse {
     response: OwnedGames
 }
 
-fn request<T>(url: String) -> Result<T, errors::Error> where for<'a> T: serde::Deserialize<'a> {
+fn request<T>(url: &str) -> Result<T, errors::Error> where for<'a> T: serde::Deserialize<'a> {
     let mut core = tokio_core::reactor::Core::new().chain_err(|| "unable to intialize tokio core")?;
     let client = hyper::Client::new(&core.handle());
     let response_future = client.get(url.parse().chain_err(|| "unable to parse url")?).and_then(|res| res.body().concat2());
@@ -54,7 +54,7 @@ pub fn sync() -> Result<(), errors::Error> {
 fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
     let owned_games_response: OwnedGamesResponse = request(
-        format!(
+        &format!(
             "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&include_appinfo=1&format=json",
             secrets.steam_api_key,
             steam_id,

@@ -68,7 +68,6 @@ fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
         let start_date = if has_played { Some(time::get_time().sec) } else { None };
         model::upsert_user_game(
             model::NewUserGame{
-                // TODO don't harcode this
                 user_id: user_id,
                 game_id: game_id,
                 play_state: play_state,

@@ -48,6 +48,13 @@ mod schema {
         }
     }
     table! {
+        platform {
+            id -> BigInt,
+            name -> VarChar,
+            short_name -> VarChar,
+        }
+    }
+    table! {
         user_game {
             id -> BigInt,
             game_id -> BigInt,

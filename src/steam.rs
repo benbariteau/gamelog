@@ -45,13 +45,13 @@ pub fn sync() -> Result<(), errors::Error> {
     let users = model::get_all_users().chain_err(|| "unable to load all users")?;
     for user in users {
         if let Some(steam_id) = user.steam_id {
-            sync_user(user.id, steam_id)?;
+            sync_user(user.id, &steam_id)?;
         }
     }
     Ok(())
 }
 
-fn sync_user(user_id: i64, steam_id: String) -> Result<(), errors::Error> {
+fn sync_user(user_id: i64, steam_id: &String) -> Result<(), errors::Error> {
     let secrets = get_secrets()?;
     let owned_games_response: OwnedGamesResponse = request(
         &format!(

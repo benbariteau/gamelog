@@ -29,14 +29,16 @@ use secure_session::middleware::SessionMiddleware;
 use secure_session::session::ChaCha20Poly1305SessionManager;
 use secure_session::session::SessionManager;
 
-mod secrets;
-mod steam;
 mod handlers;
+mod helpers;
 mod model;
+mod secrets;
+mod session;
+mod steam;
 
-use handlers::Session;
-use handlers::SessionKey;
 use handlers::routes;
+use session::Session;
+use session::SessionKey;
 use steam::sync as steam_sync;
 
 mod errors {

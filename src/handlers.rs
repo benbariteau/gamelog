@@ -150,7 +150,7 @@ fn login(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
-fn get_user_from_request(req: &mut Request) -> Result<model::User, Error> {
+fn get_user_from_request(req: &Request) -> Result<model::User, Error> {
     let user_id = req.extensions.get::<SessionKey>().ok_or::<Error>("no session".into())?.user_id;
 
     model::get_user_by_id(user_id).chain_err(|| "can't get user from database")
@@ -220,10 +220,22 @@ fn steam_collection(_: &mut Request) -> IronResult<Response> {
     )
 }
 
+fn me(req: &mut Request) -> IronResult<Response> {
+    match req.extensions.get::<SessionKey>() {
+        Some(session) => Ok(Response::with(
+            (status::SeeOther, RedirectRaw(format!("/log/{}", session.user_id)))
+        )),
+        None => Ok(Response::with(
+            (status::SeeOther, RedirectRaw("/login".to_string()))
+        )),
+    }
+}
+
 pub fn routes() -> Router {
     let mut router = Router::new();
     router.get("/", home, "home");
     router.get("/log/:user", user_log, "user_log");
+    router.get("/me", me, "me");
     router.get("/signup", signup_form, "signup_form");
     router.post("/signup", signup, "signup");
     router.get("/login", login_form, "login_form");

@@ -73,6 +73,12 @@ struct AddUserGameFormTemplate {
     _parent: BaseTemplate,
 }
 
+#[derive(Template)]
+#[template(path = "user_settings_form.html")]
+struct UserSettingsFormTemplate {
+    _parent: BaseTemplate,
+}
+
 struct GameNameAndPlayState<'a> {
     name: &'a String,
     play_state: &'a String,
@@ -224,6 +230,20 @@ fn me(req: &mut Request) -> IronResult<Response> {
     ))
 }
 
+fn user_settings_form(req: &mut Request) -> IronResult<Response> {
+    redirect_logged_out_user!(req);
+
+    let mut response = Response::with((
+        status::Ok,
+        UserSettingsFormTemplate{
+            _parent: BaseTemplate{},
+        }.render(),
+    ));
+    response.headers.set(ContentType::html());
+
+    Ok(response)
+}
+
 pub fn routes() -> Router {
     let mut router = Router::new();
     router.get("/", home, "home");
@@ -235,6 +255,8 @@ pub fn routes() -> Router {
     router.post("/login", login, "login");
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
+    router.get("/settings", user_settings_form, "user_settings_form");
+    //router.post("/settings", user_settings_update, "user_settings_update");
 
     router
 }

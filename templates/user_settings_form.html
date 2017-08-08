@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %} Settings {% endblock %}
+
+{% block body %}
+<form method="post">
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" />
+    </div>
+    <div>
+        <label for="steam_username">Steam username:</label>
+        <input type="text" id="steam_username" name="steam_username" />
+    </div>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}

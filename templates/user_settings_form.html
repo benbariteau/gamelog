@@ -6,11 +6,11 @@
 <form method="post">
     <div>
         <label for="username">Username:</label>
-        <input type="text" id="username" name="username" />
+        <input type="text" id="username" name="username" value="{{ username|e }}"/>
     </div>
     <div>
         <label for="steam_username">Steam username:</label>
-        <input type="text" id="steam_username" name="steam_username" />
+        <input type="text" id="steam_username" name="steam_username" value="{{ steam_id|e }}" />
     </div>
     <button type="submit">Save</button>
 </form>

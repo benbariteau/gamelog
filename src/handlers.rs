@@ -77,6 +77,8 @@ struct AddUserGameFormTemplate {
 #[template(path = "user_settings_form.html")]
 struct UserSettingsFormTemplate {
     _parent: BaseTemplate,
+    username: String,
+    steam_id: String,
 }
 
 struct GameNameAndPlayState<'a> {
@@ -233,10 +235,22 @@ fn me(req: &mut Request) -> IronResult<Response> {
 fn user_settings_form(req: &mut Request) -> IronResult<Response> {
     redirect_logged_out_user!(req);
 
+    let user = {
+        let session = try_session!(req);
+        itry!(get_user_from_session(session))
+    };
+
+    let steam_id = match user.steam_id {
+        Some(id) => id,
+        None => "".to_string(),
+    };
+
     let mut response = Response::with((
         status::Ok,
         UserSettingsFormTemplate{
             _parent: BaseTemplate{},
+            username: user.username,
+            steam_id: steam_id,
         }.render(),
     ));
     response.headers.set(ContentType::html());

@@ -87,7 +87,14 @@ struct GameNameAndPlayState<'a> {
 }
 
 fn home(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Welcome!")))
+    let mut response = Response::with((
+        status::Ok,
+        BaseTemplate{}.render(),
+    ));
+
+    response.headers.set(ContentType::html());
+
+    Ok(response)
 }
 
 fn user_log(req: &mut Request) -> IronResult<Response> {

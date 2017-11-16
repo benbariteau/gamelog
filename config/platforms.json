@@ -1,0 +1,134 @@
+{
+    "Sony": [
+        {
+            "name": "PlayStation",
+            "short_name": "PSX",
+            "slug": "psx"
+        },
+        {
+            "name": "PlayStation 2",
+            "short_name": "PS2",
+            "slug": "ps2"
+        },
+        {
+            "name": "PlayStation 3",
+            "short_name": "PS3",
+            "slug": "ps3"
+        },
+        {
+            "name": "PlayStation 4",
+            "short_name": "PS4",
+            "slug": "ps4"
+        },
+        {
+            "name": "PlayStation Portable",
+            "short_name": "PSP",
+            "slug": "psp"
+        },
+        {
+            "name": "PlayStation Vita",
+            "short_name": "Vita",
+            "slug": "vita"
+        }
+    ],
+    "Microsoft": [
+        {
+            "name": "Windows",
+            "short_name": "Win",
+            "slug": "win"
+        },
+        {
+            "name": "Xbox",
+            "short_name": "Xbox",
+            "slug": "xbox"
+        },
+        {
+            "name": "Xbox 360",
+            "short_name": "360",
+            "slug": "360"
+        },
+        {
+            "name": "Xbox One",
+            "short_name": "XBO",
+            "slug": "xbo"
+        }
+    ],
+    "Nintendo": [
+        {
+            "name": "Nintendo Entertainment System",
+            "short_name": "NES",
+            "slug": "nes"
+        },
+        {
+            "name": "Super Nintendo Entertainment System",
+            "short_name": "SNES",
+            "slug": "snes"
+        },
+        {
+            "name": "Nintendo 64",
+            "short_name": "N64",
+            "slug": "n64"
+        },
+        {
+            "name": "GameCube",
+            "short_name": "GC",
+            "slug": "gc"
+        },
+        {
+            "name": "Wii",
+            "short_name": "Wii",
+            "slug": "wii"
+        },
+        {
+            "name": "Wii U",
+            "short_name": "Wii U",
+            "slug": "wii-u"
+        },
+        {
+            "name": "Switch",
+            "short_name": "switch",
+            "slug": "switch"
+        },
+        {
+            "name": "DS",
+            "short_name": "DS",
+            "slug": "ds"
+        },
+        {
+            "name": "3DS",
+            "short_name": "3DS",
+            "slug": "3ds"
+        }
+    ],
+    "Sega": [
+        {
+            "name": "Genesis",
+            "short_name": "Genesis",
+            "slug": "genesis"
+        },
+        {
+            "name": "Saturn",
+            "short_name": "Saturn",
+            "slug": "saturn"
+        },
+        {
+            "name": "Dreamcast",
+            "short_name": "DC",
+            "slug": "dc"
+        }
+    ],
+    "Apple": [
+        {
+            "name": "macOS",
+            "short_name": "Mac",
+            "slug": "mac"
+        }
+    ],
+    "Linux": [
+        {
+            "name": "Linux",
+            "short_name": "Linux",
+            "slug": "linux"
+        }
+    ]
+}

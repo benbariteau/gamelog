@@ -45,7 +45,9 @@ macro_rules! redirect_logged_out_user {
 
 #[derive(Template)]
 #[template(path = "base.html")]
-struct BaseTemplate {}
+struct BaseTemplate {
+    logged_in: bool,
+}
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
@@ -86,10 +88,11 @@ struct GameNameAndPlayState<'a> {
     play_state: &'a String,
 }
 
-fn home(_: &mut Request) -> IronResult<Response> {
+fn home(req: &mut Request) -> IronResult<Response> {
+    let logged_in = req.extensions.get::<SessionKey>().is_some();
     let mut response = Response::with((
         status::Ok,
-        BaseTemplate{}.render(),
+        BaseTemplate{logged_in: logged_in}.render(),
     ));
 
     response.headers.set(ContentType::html());
@@ -128,7 +131,9 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     }).collect();
 
     let template_context = UserLogTemplate {
-        _parent: BaseTemplate{},
+        _parent: BaseTemplate{
+            logged_in: req.extensions.get::<SessionKey>().is_some(),
+        },
         username: user.username,
         games: games,
     };
@@ -143,11 +148,13 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
-fn signup_form(_: &mut Request) -> IronResult<Response> {
+fn signup_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         SignupFormTemplate{
-            _parent: BaseTemplate{},
+            _parent: BaseTemplate{
+                logged_in: req.extensions.get::<SessionKey>().is_some(),
+            },
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -155,11 +162,13 @@ fn signup_form(_: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
-fn login_form(_: &mut Request) -> IronResult<Response> {
+fn login_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         LoginFormTemplate{
-            _parent: BaseTemplate{},
+            _parent: BaseTemplate{
+                logged_in: req.extensions.get::<SessionKey>().is_some(),
+            },
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -200,7 +209,9 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         AddUserGameFormTemplate{
-            _parent: BaseTemplate{},
+            _parent: BaseTemplate{
+                logged_in: req.extensions.get::<SessionKey>().is_some(),
+            },
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -255,7 +266,9 @@ fn user_settings_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         UserSettingsFormTemplate{
-            _parent: BaseTemplate{},
+            _parent: BaseTemplate{
+                logged_in: req.extensions.get::<SessionKey>().is_some(),
+            },
             username: user.username,
             steam_id: steam_id,
         }.render(),

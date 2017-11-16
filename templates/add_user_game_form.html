@@ -1,20 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %} Add a Game {% endblock %}
+{% block title %} {{ page_title }} {% endblock %}
 
 {% block body %}
 <form method="post">
     <div>
         <label for="Name">Name:</label>
-        <input type="text" id="name" name="name" />
+        <input type="text" id="name" name="name" value="{{ name }}" />
     </div>
     <fieldset>
         <legend>State</legend>
         {% for user_game_state in user_game_states %}
-            <input type="radio" name="state" id="state_{{ user_game_state.value }}" value="{{ user_game_state.value }}" />
-            <label for="state_unplayed">{{ user_game_state.display }}</label>
+        <input
+            type="radio"
+            name="state"
+            id="state_{{ user_game_state.value }}"
+            value="{{ user_game_state.value }}"
+            {% if user_game_state.value == set_user_game_state %} checked="checked" {% endif %}
+        />
+        <label for="state_unplayed">{{ user_game_state.display }}</label>
         {% endfor %}
     </fieldset>
-    <button type="submit">Add Game</button>
+    <button type="submit">{{ submit_button }}</button>
 </form>
 {% endblock %}

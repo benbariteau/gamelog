@@ -71,7 +71,11 @@ struct LoginFormTemplate {
 #[template(path = "add_user_game_form.html")]
 struct AddUserGameFormTemplate<'a> {
     _parent: BaseTemplate,
+    page_title: String,
+    submit_button: String,
     user_game_states: Vec<UserGameState<'a>>,
+    name: String,
+    set_user_game_state: String,
 }
 
 #[derive(Template)]
@@ -259,7 +263,11 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
+            page_title: "Add a Game".to_string(),
+            submit_button: "Add Game".to_string(),
             user_game_states: user_game_states(),
+            name: "".to_string(),
+            set_user_game_state: "".to_string(),
         }.render(),
     ));
     response.headers.set(ContentType::html());

@@ -71,8 +71,9 @@ struct LoginFormTemplate {
 
 #[derive(Template)]
 #[template(path = "add_user_game_form.html")]
-struct AddUserGameFormTemplate {
+struct AddUserGameFormTemplate<'a> {
     _parent: BaseTemplate,
+    user_game_states: Vec<UserGameState<'a>>,
 }
 
 #[derive(Template)]
@@ -86,6 +87,48 @@ struct UserSettingsFormTemplate {
 struct GameNameAndPlayState<'a> {
     name: &'a String,
     play_state: &'a String,
+}
+
+struct UserGameState<'a> {
+    display: &'a str,
+    value: &'a str,
+}
+
+fn user_game_states<'a>() -> Vec<UserGameState<'a>> {
+    vec![
+        UserGameState{
+            display: "Unplayed",
+            value: "unplayed",
+        },
+        UserGameState{
+            display: "Unfinished",
+            value: "unfinished",
+        },
+        UserGameState{
+            display: "Beaten",
+            value: "beaten",
+        },
+        UserGameState{
+            display: "Completed",
+            value: "completed",
+        },
+        UserGameState{
+            display: "100%",
+            value: "100_percent",
+        },
+        UserGameState{
+            display: "Won't Beat",
+            value: "wont_beat",
+        },
+        UserGameState{
+            display: "Multiplayer",
+            value: "multiplayer",
+        },
+        UserGameState{
+            display: "Null",
+            value: "null",
+        },
+    ]
 }
 
 fn home(req: &mut Request) -> IronResult<Response> {
@@ -218,6 +261,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
+            user_game_states: user_game_states(),
         }.render(),
     ));
     response.headers.set(ContentType::html());

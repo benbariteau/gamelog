@@ -203,6 +203,12 @@ fn login(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
 }
 
+fn logout(req: &mut Request) -> IronResult<Response> {
+    req.extensions.remove::<SessionKey>();
+
+    Ok(Response::with((status::SeeOther, RedirectRaw("/".to_string()))))
+}
+
 fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
     redirect_logged_out_user!(req);
 
@@ -310,6 +316,7 @@ pub fn routes() -> Router {
     router.post("/collection/add", add_user_game, "add_user_game");
     router.get("/settings", user_settings_form, "user_settings_form");
     router.post("/settings", user_settings_update, "user_settings_update");
+    router.get("/logout", logout, "logout");
 
     router
 }

@@ -1,5 +1,4 @@
 use askama::Template;
-use askama;
 use iron::IronResult;
 use iron::Plugin;
 use iron::Request;
@@ -9,7 +8,6 @@ use iron::modifiers::RedirectRaw;
 use iron::status;
 use params::Params;
 use router::Router;
-use std;
 use time;
 
 use errors::Error;

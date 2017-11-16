@@ -275,9 +275,11 @@ fn get_user_settings_from_request(req: &mut Request) -> errors::Result<(String, 
 }
 
 fn user_settings_update(req: &mut Request) -> IronResult<Response> {
-    let (username, steam_id) = { itry!(get_user_settings_from_request(req)) };
+    let (username, steam_id_raw) = { itry!(get_user_settings_from_request(req)) };
+    let steam_id = if steam_id_raw == "" { None } else { Some(steam_id_raw) };
     let session = try_session!(req);
     itry!(model::update_username(session.user_id, username));
+    itry!(model::update_steam_id(session.user_id, steam_id));
 
     Ok(Response::with((status::SeeOther, RedirectRaw("/settings".to_string()))))
 }

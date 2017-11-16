@@ -416,7 +416,20 @@ pub fn update_username(user_id: i64, username: String) -> Result<(), Error> {
         )
     ).set((
         user::username.eq(username),
-    )).execute(&conn).chain_err(|| "unable to updater username")?;
+    )).execute(&conn).chain_err(|| "unable to update username")?;
+
+    Ok(())
+}
+
+pub fn update_steam_id(user_id: i64, steam_id: Option<String>) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    diesel::update(
+        user::table.filter(
+            user::id.eq(user_id),
+        )
+    ).set((
+        user::steam_id.eq(steam_id),
+    )).execute(&conn).chain_err(|| "unable to update steam_id")?;
 
     Ok(())
 }

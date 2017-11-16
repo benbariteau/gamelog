@@ -258,6 +258,23 @@ fn user_settings_form(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn get_user_settings_from_request(req: &mut Request) -> errors::Result<(String, String)> {
+    let params = req.get_ref::<Params>().chain_err(|| "unable to get params map")?;
+
+    let username = get_param_string_from_param_map(params, "username")?;
+    let steam_id = get_param_string_from_param_map(params, "steam_id")?;
+
+    Ok((username, steam_id))
+}
+
+fn user_settings_update(req: &mut Request) -> IronResult<Response> {
+    let (username, steam_id) = { itry!(get_user_settings_from_request(req)) };
+    let session = try_session!(req);
+    itry!(model::update_username(session.user_id, username));
+
+    Ok(Response::with((status::SeeOther, RedirectRaw("/settings".to_string()))))
+}
+
 pub fn routes() -> Router {
     let mut router = Router::new();
     router.get("/", home, "home");
@@ -270,7 +287,7 @@ pub fn routes() -> Router {
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
     router.get("/settings", user_settings_form, "user_settings_form");
-    //router.post("/settings", user_settings_update, "user_settings_update");
+    router.post("/settings", user_settings_update, "user_settings_update");
 
     router
 }

@@ -406,3 +406,17 @@ pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {
     ).chain_err(|| "unable to save new user game")?;
     Ok(())
 }
+
+
+pub fn update_username(user_id: i64, username: String) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    diesel::update(
+        user::table.filter(
+            user::id.eq(user_id),
+        )
+    ).set((
+        user::username.eq(username),
+    )).execute(&conn).chain_err(|| "unable to updater username")?;
+
+    Ok(())
+}

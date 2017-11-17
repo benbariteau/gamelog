@@ -21,15 +21,15 @@
     </select>
     <fieldset>
         <legend>State</legend>
-        {% for user_game_state in user_game_states %}
+        {% for play_state in play_states %}
         <input
             type="radio"
             name="state"
-            id="state_{{ user_game_state.value }}"
-            value="{{ user_game_state.value }}"
-            {% if user_game_state.value == set_user_game_state %} checked="checked" {% endif %}
+            id="state_{{ play_state.value }}"
+            value="{{ play_state.value }}"
+            {% if play_state.value == set_user_game_state %} checked="checked" {% endif %}
         />
-        <label for="state_unplayed">{{ user_game_state.display }}</label>
+        <label for="state_unplayed">{{ play_state.display }}</label>
         {% endfor %}
     </fieldset>
     <button type="submit">{{ submit_button }}</button>

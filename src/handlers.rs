@@ -82,7 +82,7 @@ struct UserGameFormTemplate<'a> {
     _parent: BaseTemplate,
     page_title: String,
     submit_button: String,
-    user_game_states: Vec<UserGameState<'a>>,
+    play_states: Vec<PlayState<'a>>,
     platforms: Vec<Platform>,
     name: String,
     disabled_name: bool,
@@ -103,7 +103,7 @@ struct UserGamePresenter {
     user_game: model::UserGame,
 }
 
-struct UserGameState<'a> {
+struct PlayState<'a> {
     display: &'a str,
     value: &'a str,
 }
@@ -115,37 +115,37 @@ struct Platform {
     slug: String,
 }
 
-fn user_game_states<'a>() -> Vec<UserGameState<'a>> {
+fn get_play_states<'a>() -> Vec<PlayState<'a>> {
     vec![
-        UserGameState{
+        PlayState{
             display: "Unplayed",
             value: "unplayed",
         },
-        UserGameState{
+        PlayState{
             display: "Unfinished",
             value: "unfinished",
         },
-        UserGameState{
+        PlayState{
             display: "Beaten",
             value: "beaten",
         },
-        UserGameState{
+        PlayState{
             display: "Completed",
             value: "completed",
         },
-        UserGameState{
+        PlayState{
             display: "100%",
             value: "100_percent",
         },
-        UserGameState{
+        PlayState{
             display: "Won't Beat",
             value: "wont_beat",
         },
-        UserGameState{
+        PlayState{
             display: "Multiplayer",
             value: "multiplayer",
         },
-        UserGameState{
+        PlayState{
             display: "Null",
             value: "null",
         },
@@ -288,7 +288,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             },
             page_title: "Add a Game".to_string(),
             submit_button: "Add Game".to_string(),
-            user_game_states: user_game_states(),
+            play_states: get_play_states(),
             platforms: itry!(get_platforms()),
             name: "".to_string(),
             disabled_name: false,
@@ -313,7 +313,7 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let platform = itry!(get_param_string_from_param_map(params, "platform"));
     if !(
         itry!(get_platforms()).iter().any(|valid_platform| platform == valid_platform.slug) &&
-        user_game_states().iter().any(|valid_play_state| state == valid_play_state.value)
+        get_play_states().iter().any(|valid_play_state| state == valid_play_state.value)
     ) {
         return Ok(Response::with((status::BadRequest, "platform or play state not valid!")));
     }
@@ -424,7 +424,7 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
             _parent: BaseTemplate{logged_in: true, alerts: vec![]},
             page_title: format!("Edit Game: {}", game.name),
             submit_button: "Update Game".to_string(),
-            user_game_states: user_game_states(),
+            play_states: get_play_states(),
             platforms: itry!(get_platforms()),
             name: game.name,
             disabled_name: true,
@@ -447,7 +447,7 @@ fn edit_user_game(req: &mut Request) -> IronResult<Response> {
 
     if !(
         itry!(get_platforms()).iter().any(|valid_platform| platform == valid_platform.slug) &&
-        user_game_states().iter().any(|valid_play_state| state == valid_play_state.value)
+        get_play_states().iter().any(|valid_play_state| state == valid_play_state.value)
     ) {
         return Ok(Response::with((status::BadRequest, "platform or play state not valid!")));
     }

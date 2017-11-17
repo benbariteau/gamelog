@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use askama::Template;
 use iron::IronResult;
 use iron::Plugin;
@@ -20,8 +22,6 @@ use model;
 use session::Session;
 use session::SessionKey;
 use serde_json;
-use std::fs::File;
-use std::collections::HashMap;
 
 
 macro_rules! try_session {
@@ -392,8 +392,8 @@ fn user_settings_update(req: &mut Request) -> IronResult<Response> {
 }
 
 fn get_platforms() -> Result<Vec<Platform>, Error> {
-    let platform_config = File::open("config/platforms.json").chain_err(|| "unable to read platforms config")?;
-    let manufacturer_to_platforms: HashMap<String, Vec<Platform>> = serde_json::from_reader(platform_config).chain_err(|| "unable to parse platforms config")?;
+    let platform_config = include_str!("config/platforms.json");
+    let manufacturer_to_platforms: HashMap<String, Vec<Platform>> = serde_json::from_str(platform_config).chain_err(|| "unable to parse platforms config")?;
     Ok(manufacturer_to_platforms.into_iter().flat_map(|(_, platforms)| platforms.into_iter()).collect())
 }
 

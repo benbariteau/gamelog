@@ -68,8 +68,8 @@ struct LoginFormTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "add_user_game_form.html")]
-struct AddUserGameFormTemplate<'a> {
+#[template(path = "user_game_form.html")]
+struct UserGameFormTemplate<'a> {
     _parent: BaseTemplate,
     page_title: String,
     submit_button: String,
@@ -259,7 +259,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
 
     let mut response = Response::with((
         status::Ok,
-        AddUserGameFormTemplate{
+        UserGameFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },

@@ -353,6 +353,37 @@ fn user_settings_update(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/settings".to_string()))))
 }
 
+fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
+    let params = itry!(
+        req.extensions.get::<Router>().ok_or::<Error>("no router".into())
+    );
+
+    let user_game_id_string = itry!(
+        params.find("user_game_id").ok_or::<Error>("no user game id provided".into())
+    );
+
+    let user_game_id: i64 = itry!(user_game_id_string.parse());
+
+    let session = try_session!(req);
+    let user_game = itry!(model::get_user_game_by_user_id_and_game_id(session.user_id, user_game_id));
+    let game = itry!(model::get_game_by_id(user_game.game_id));
+
+    let mut response = Response::with((
+        status::Ok,
+        UserGameFormTemplate{
+            _parent: BaseTemplate{logged_in: true},
+            page_title: format!("Edit Game: {}", game.name),
+            submit_button: "Update Game".to_string(),
+            user_game_states: user_game_states(),
+            name: game.name,
+            set_user_game_state: user_game.play_state,
+        }.render(),
+    ));
+    response.headers.set(ContentType::html());
+
+    Ok(response)
+}
+
 pub fn routes() -> Router {
     let mut router = Router::new();
     router.get("/", home, "home");
@@ -364,6 +395,7 @@ pub fn routes() -> Router {
     router.post("/login", login, "login");
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
+    router.get("/collection/edit/:user_game_id", edit_user_game_form, "edit_user_game_form");
     router.get("/settings", user_settings_form, "user_settings_form");
     router.post("/settings", user_settings_update, "user_settings_update");
     router.get("/logout", logout, "logout");

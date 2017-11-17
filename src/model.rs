@@ -355,7 +355,14 @@ pub fn upsert_game(name: String) -> Result<i64, Error> {
     )
 }
 
-fn get_user_game_by_user_id_and_game_id(user_id: i64, game_id: i64) -> Result<UserGame, Error> {
+pub fn get_game_by_id(game_id: i64) -> Result<Game, Error> {
+    let conn = get_diesel_conn()?;
+    game::table.filter(
+        game::id.eq(game_id),
+    ).get_result(&conn).chain_err(|| "unable to find game")
+}
+
+pub fn get_user_game_by_user_id_and_game_id(user_id: i64, game_id: i64) -> Result<UserGame, Error> {
     let conn = get_diesel_conn()?;
     user_game::table.filter(
         user_game::user_id.eq(user_id).and(

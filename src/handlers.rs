@@ -149,7 +149,7 @@ fn home(req: &mut Request) -> IronResult<Response> {
     let logged_in = req.extensions.get::<SessionKey>().is_some();
     let mut response = Response::with((
         status::Ok,
-        BaseTemplate{logged_in: logged_in}.render(),
+        itry!(BaseTemplate{logged_in: logged_in}.render()),
     ));
 
     response.headers.set(ContentType::html());
@@ -194,7 +194,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
 
     let mut response = Response::with((
         status::Ok,
-        template_context.render(),
+        itry!(template_context.render()),
     ));
 
     response.headers.set(ContentType::html());
@@ -205,11 +205,11 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
 fn signup_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        SignupFormTemplate{
+        itry!(SignupFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
-        }.render(),
+        }.render()),
     ));
     response.headers.set(ContentType::html());
 
@@ -219,11 +219,11 @@ fn signup_form(req: &mut Request) -> IronResult<Response> {
 fn login_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
-        LoginFormTemplate{
+        itry!(LoginFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
-        }.render(),
+        }.render()),
     ));
     response.headers.set(ContentType::html());
 
@@ -268,7 +268,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
 
     let mut response = Response::with((
         status::Ok,
-        UserGameFormTemplate{
+        itry!(UserGameFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
@@ -279,7 +279,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             name: "".to_string(),
             set_user_game_state: "".to_string(),
             set_platform: "".to_string(),
-        }.render(),
+        }.render()),
     ));
     response.headers.set(ContentType::html());
 
@@ -332,13 +332,13 @@ fn user_settings_form(req: &mut Request) -> IronResult<Response> {
 
     let mut response = Response::with((
         status::Ok,
-        UserSettingsFormTemplate{
+        itry!(UserSettingsFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
             },
             username: user.username,
             steam_id: steam_id,
-        }.render(),
+        }.render()),
     ));
     response.headers.set(ContentType::html());
 
@@ -393,7 +393,7 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
 
     let mut response = Response::with((
         status::Ok,
-        UserGameFormTemplate{
+        itry!(UserGameFormTemplate{
             _parent: BaseTemplate{logged_in: true},
             page_title: format!("Edit Game: {}", game.name),
             submit_button: "Update Game".to_string(),
@@ -402,7 +402,7 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
             name: game.name,
             set_user_game_state: user_game.play_state,
             set_platform: user_game.platform,
-        }.render(),
+        }.render()),
     ));
     response.headers.set(ContentType::html());
 

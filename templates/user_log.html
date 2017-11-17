@@ -6,7 +6,7 @@
 <h1> {{username}}'s Gamelog </h1>
 <ul>
     {% for game in games %}
-        <li>{{ game.name|e }} ({{ game.play_state|e }})</li>
+        <li>{{ game.name|e }} ({{ game.play_state|e }}) <a href="/collection/edit/{{game.user_game.id}}">🖋️</a></li>
     {% endfor %}
 </ul>
 {% endblock %}

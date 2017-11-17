@@ -93,6 +93,7 @@ struct UserSettingsFormTemplate {
 
 struct GameNameAndPlayState<'a> {
     name: &'a String,
+    user_game: &'a model::UserGame,
     play_state: &'a String,
 }
 
@@ -183,6 +184,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
         let &(ref name, ref game) = game_info;
         GameNameAndPlayState{
             name: name,
+            user_game: game,
             play_state: &game.play_state,
         }
     }).collect();

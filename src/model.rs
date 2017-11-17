@@ -412,6 +412,32 @@ fn update_user_game(game: UserGame) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn update_user_game_play_state(id: i64, play_state: String) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    diesel::update(
+        user_game::table.filter(
+            user_game::id.eq(id),
+        )
+    ).set(
+        user_game::play_state.eq(play_state),
+    ).execute(&conn).chain_err(|| "unable to update play state")?;
+
+    Ok(())
+}
+
+pub fn update_user_game_platform(id: i64, platform: String) -> Result<(), Error> {
+    let conn = get_diesel_conn()?;
+    diesel::update(
+        user_game::table.filter(
+            user_game::id.eq(id),
+        )
+    ).set(
+        user_game::platform.eq(platform),
+    ).execute(&conn).chain_err(|| "unable to update play state")?;
+
+    Ok(())
+}
+
 pub fn add_user_game(user_game: NewUserGame) -> Result<(), Error> {
     let conn = get_diesel_conn()?;
     diesel::insert(

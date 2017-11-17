@@ -29,6 +29,7 @@ macro_rules! try_session {
         match $req.extensions.get::<SessionKey>() {
             Some(session) => session,
             None => return Ok(Response::with(
+                // TODO redirect with current path for continuation
                 (status::SeeOther, RedirectRaw("/login".to_string()))
             )),
         }
@@ -412,6 +413,37 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn edit_user_game(req: &mut Request) -> IronResult<Response> {
+    let (platform, state) = {
+        let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
+        let platform = itry!(get_param_string_from_param_map(params, "platform"));
+        let state = itry!(get_param_string_from_param_map(params, "state"));
+        (platform, state)
+    };
+
+    let user_game_id = {
+        let url_params = itry!(req.extensions.get::<Router>().ok_or::<Error>("no router".into()));
+        let user_game_id_string = itry!(url_params.find("user_game_id").ok_or::<Error>("no user game id provided".into()));
+        itry!(user_game_id_string.parse().chain_err(|| "invalid user_game_id"))
+    };
+
+    let user_game = itry!(model::get_user_game_by_id(user_game_id));
+    let session = try_session!(req);
+    if user_game.user_id != session.user_id {
+        return Ok(Response::with((status::Forbidden, "Not your game!")))
+    }
+
+    itry!(model::update_user_game_play_state(user_game_id, state));
+    itry!(model::update_user_game_platform(user_game_id, platform));
+
+    Ok(
+        Response::with((
+            status::SeeOther,
+            RedirectRaw(format!("/collection/edit/{}", user_game_id)),
+        ))
+    )
+}
+
 pub fn routes() -> Router {
     let mut router = Router::new();
     router.get("/", home, "home");
@@ -424,6 +456,7 @@ pub fn routes() -> Router {
     router.get("/collection/add", add_user_game_form, "add_user_game_form");
     router.post("/collection/add", add_user_game, "add_user_game");
     router.get("/collection/edit/:user_game_id", edit_user_game_form, "edit_user_game_form");
+    router.post("/collection/edit/:user_game_id", edit_user_game, "edit_user_game_form");
     router.get("/settings", user_settings_form, "user_settings_form");
     router.post("/settings", user_settings_update, "user_settings_update");
     router.get("/logout", logout, "logout");

@@ -79,6 +79,7 @@ struct UserGameFormTemplate<'a> {
     user_game_states: Vec<UserGameState<'a>>,
     platforms: Vec<Platform>,
     name: String,
+    disabled_name: bool,
     set_user_game_state: String,
     set_platform: String,
 }
@@ -277,6 +278,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             user_game_states: user_game_states(),
             platforms: itry!(get_platforms()),
             name: "".to_string(),
+            disabled_name: false,
             set_user_game_state: "".to_string(),
             set_platform: "".to_string(),
         }.render()),
@@ -400,6 +402,7 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
             user_game_states: user_game_states(),
             platforms: itry!(get_platforms()),
             name: game.name,
+            disabled_name: true,
             set_user_game_state: user_game.play_state,
             set_platform: user_game.platform,
         }.render()),

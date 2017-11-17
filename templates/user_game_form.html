@@ -6,7 +6,7 @@
 <form method="post">
     <div>
         <label for="Name">Name:</label>
-        <input type="text" id="name" name="name" value="{{ name }}" />
+        <input type="text" id="name" name="name" value="{{ name }}" {% if disabled_name %} disabled="disabled" {% endif %} />
     </div>
     <select name="platform">
         <option value="unknown"></option>

@@ -8,6 +8,17 @@
         <label for="Name">Name:</label>
         <input type="text" id="name" name="name" value="{{ name }}" />
     </div>
+    <select name="platform">
+        <option value="unknown"></option>
+        {% for platform in platforms %}
+            <option
+                value="{{platform.slug}}"
+                {% if platform.slug == set_platform %}
+                    selected="selected"
+                {% endif %}
+            >{{platform.name|e}}</option>
+        {% endfor %}
+    </select>
     <fieldset>
         <legend>State</legend>
         {% for user_game_state in user_game_states %}

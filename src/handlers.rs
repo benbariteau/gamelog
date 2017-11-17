@@ -19,6 +19,9 @@ use helpers::get_user_signup_info;
 use model;
 use session::Session;
 use session::SessionKey;
+use serde_json;
+use std::fs::File;
+use std::collections::HashMap;
 
 
 macro_rules! try_session {
@@ -74,8 +77,10 @@ struct UserGameFormTemplate<'a> {
     page_title: String,
     submit_button: String,
     user_game_states: Vec<UserGameState<'a>>,
+    platforms: Vec<Platform>,
     name: String,
     set_user_game_state: String,
+    set_platform: String,
 }
 
 #[derive(Template)]
@@ -94,6 +99,13 @@ struct GameNameAndPlayState<'a> {
 struct UserGameState<'a> {
     display: &'a str,
     value: &'a str,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Platform {
+    name: String,
+    short_name: String,
+    slug: String,
 }
 
 fn user_game_states<'a>() -> Vec<UserGameState<'a>> {
@@ -266,8 +278,10 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
             page_title: "Add a Game".to_string(),
             submit_button: "Add Game".to_string(),
             user_game_states: user_game_states(),
+            platforms: itry!(get_platforms()),
             name: "".to_string(),
             set_user_game_state: "".to_string(),
+            set_platform: "".to_string(),
         }.render(),
     ));
     response.headers.set(ContentType::html());
@@ -353,6 +367,12 @@ fn user_settings_update(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::SeeOther, RedirectRaw("/settings".to_string()))))
 }
 
+fn get_platforms() -> Result<Vec<Platform>, Error> {
+    let platform_config = File::open("config/platforms.json").chain_err(|| "unable to read platforms config")?;
+    let manufacturer_to_platforms: HashMap<String, Vec<Platform>> = serde_json::from_reader(platform_config).chain_err(|| "unable to parse platforms config")?;
+    Ok(manufacturer_to_platforms.into_iter().flat_map(|(_, platforms)| platforms.into_iter()).collect())
+}
+
 fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
     let session = try_session!(req);
 
@@ -381,8 +401,10 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
             page_title: format!("Edit Game: {}", game.name),
             submit_button: "Update Game".to_string(),
             user_game_states: user_game_states(),
+            platforms: itry!(get_platforms()),
             name: game.name,
             set_user_game_state: user_game.play_state,
+            set_platform: user_game.platform,
         }.render(),
     ));
     response.headers.set(ContentType::html());

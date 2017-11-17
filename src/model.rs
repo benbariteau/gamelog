@@ -86,6 +86,7 @@ pub struct NewUserGame {
     pub game_id: i64,
     pub user_id: i64,
     pub play_state: String,
+    pub platform: String,
     pub acquisition_date: i64,
     pub start_date: Option<i64>,
     pub beat_date: Option<i64>,

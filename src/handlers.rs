@@ -297,13 +297,18 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
 
     let params = itry!(req.get_ref::<Params>().chain_err(|| "unable to get params map"));
     let name = itry!(get_param_string_from_param_map(params, "name"));
-    let game_id = itry!(model::upsert_game(name));
     let state = itry!(get_param_string_from_param_map(params, "state"));
+    let platform = itry!(get_param_string_from_param_map(params, "platform"));
+
+    // TODO make sure that games with the same name don't get mixed up
+    let game_id = itry!(model::upsert_game(name));
+
     itry!(
         model::add_user_game(model::NewUserGame{
             game_id: game_id,
             user_id: user.id,
             play_state: state,
+            platform: platform,
             acquisition_date: time::get_time().sec,
             start_date: None,
             beat_date: None,

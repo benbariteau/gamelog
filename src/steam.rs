@@ -72,6 +72,7 @@ fn sync_user(user_id: i64, steam_id: &String) -> Result<(), errors::Error> {
                 user_id: user_id,
                 game_id: game_id,
                 play_state: play_state,
+                platform: "win".to_string(),
                 acquisition_date: time::get_time().sec,
                 start_date: start_date,
                 beat_date: None,

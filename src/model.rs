@@ -173,7 +173,7 @@ pub fn get_user_games_with_names(user_id: i64) -> Result<Vec<(String, UserGame)>
     ).load(
         &conn,
     ).chain_err(|| "unable to get game names")?;
-    let user_games_with_names = games.iter().map(|game| game.name.clone()).zip(user_games).collect();
+    let user_games_with_names = games.into_iter().map(|game| game.name).zip(user_games).collect();
 
     Ok(user_games_with_names)
 }

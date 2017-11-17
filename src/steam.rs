@@ -62,6 +62,7 @@ fn sync_user(user_id: i64, steam_id: &String) -> Result<(), errors::Error> {
     )?;
 
     for game in owned_games_response.response.games {
+        // TODO upsert by steam id instead of name
         let game_id = upsert_game(&game)?;
         let has_played = game.playtime_forever > 0;
         let play_state = if has_played { "unfinished" } else { "unplayed" }.to_string();

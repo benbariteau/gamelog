@@ -339,6 +339,7 @@ pub fn insert_game(game: NewGame) -> Result<i64, Error> {
         &conn
     ).chain_err(|| "unable to insert new game")?;
 
+    // TODO get by last id instead of name
     Ok(get_game_by_name(&game.name)?.id)
 }
 

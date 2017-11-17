@@ -362,7 +362,7 @@ pub fn get_game_by_id(game_id: i64) -> Result<Game, Error> {
     ).get_result(&conn).chain_err(|| "unable to find game")
 }
 
-pub fn get_user_game_by_user_id_and_game_id(user_id: i64, game_id: i64) -> Result<UserGame, Error> {
+fn get_user_game_by_user_id_and_game_id(user_id: i64, game_id: i64) -> Result<UserGame, Error> {
     let conn = get_diesel_conn()?;
     user_game::table.filter(
         user_game::user_id.eq(user_id).and(
@@ -382,6 +382,13 @@ pub fn upsert_user_game(user_game: NewUserGame) -> Result<(), Error> {
         },
         Err(_) => add_user_game(user_game)
     }
+}
+
+pub fn get_user_game_by_id(id: i64) -> Result<UserGame, Error> {
+    let conn = get_diesel_conn()?;
+    user_game::table.filter(
+        user_game::id.eq(id),
+    ).get_result(&conn).chain_err(|| "unable to find user game")
 }
 
 fn update_user_game(game: UserGame) -> Result<(), Error> {

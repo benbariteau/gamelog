@@ -354,6 +354,8 @@ fn user_settings_update(req: &mut Request) -> IronResult<Response> {
 }
 
 fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
+    let session = try_session!(req);
+
     let params = itry!(
         req.extensions.get::<Router>().ok_or::<Error>("no router".into())
     );
@@ -364,8 +366,12 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
 
     let user_game_id: i64 = itry!(user_game_id_string.parse());
 
-    let session = try_session!(req);
-    let user_game = itry!(model::get_user_game_by_user_id_and_game_id(session.user_id, user_game_id));
+    let user_game = itry!(model::get_user_game_by_id(user_game_id));
+
+    if user_game.user_id != session.user_id {
+        return Ok(Response::with((status::Forbidden, "You don't own this game!")))
+    }
+
     let game = itry!(model::get_game_by_id(user_game.game_id));
 
     let mut response = Response::with((

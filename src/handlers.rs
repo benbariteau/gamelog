@@ -52,10 +52,10 @@ struct BaseTemplate {
 
 #[derive(Template)]
 #[template(path = "user_log.html")]
-struct UserLogTemplate<'a> {
+struct UserLogTemplate {
     _parent: BaseTemplate,
     username: String,
-    games: Vec<GameNameAndPlayState<'a>>,
+    games: Vec<GameNameAndPlayState>,
 }
 
 #[derive(Template)]
@@ -91,10 +91,9 @@ struct UserSettingsFormTemplate {
     steam_id: String,
 }
 
-struct GameNameAndPlayState<'a> {
-    name: &'a String,
-    user_game: &'a model::UserGame,
-    play_state: &'a String,
+struct GameNameAndPlayState {
+    name: String,
+    user_game: model::UserGame,
 }
 
 struct UserGameState<'a> {
@@ -180,13 +179,9 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     };
 
     let user_games_with_names = itry!(model::get_user_games_with_names(user.id));
-    let games = user_games_with_names.iter().map(|game_info| {
-        let &(ref name, ref game) = game_info;
-        GameNameAndPlayState{
-            name: name,
-            user_game: game,
-            play_state: &game.play_state,
-        }
+    let games = user_games_with_names.into_iter().map(|(name, game)| GameNameAndPlayState{
+        name: name,
+        user_game: game,
     }).collect();
 
     let template_context = UserLogTemplate {

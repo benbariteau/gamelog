@@ -311,6 +311,12 @@ fn add_user_game(req: &mut Request) -> IronResult<Response> {
     let name = itry!(get_param_string_from_param_map(params, "name"));
     let state = itry!(get_param_string_from_param_map(params, "state"));
     let platform = itry!(get_param_string_from_param_map(params, "platform"));
+    if !(
+        itry!(get_platforms()).iter().any(|valid_platform| platform == valid_platform.slug) &&
+        user_game_states().iter().any(|valid_play_state| state == valid_play_state.value)
+    ) {
+        return Ok(Response::with((status::BadRequest, "platform or play state not valid!")));
+    }
 
     // TODO make sure that games with the same name don't get mixed up
     let game_id = itry!(model::upsert_game(name));
@@ -438,6 +444,13 @@ fn edit_user_game(req: &mut Request) -> IronResult<Response> {
         let state = itry!(get_param_string_from_param_map(params, "state"));
         (platform, state)
     };
+
+    if !(
+        itry!(get_platforms()).iter().any(|valid_platform| platform == valid_platform.slug) &&
+        user_game_states().iter().any(|valid_play_state| state == valid_play_state.value)
+    ) {
+        return Ok(Response::with((status::BadRequest, "platform or play state not valid!")));
+    }
 
     let user_game_id = {
         let url_params = itry!(req.extensions.get::<Router>().ok_or::<Error>("no router".into()));

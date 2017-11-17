@@ -55,7 +55,7 @@ struct BaseTemplate {
 struct UserLogTemplate {
     _parent: BaseTemplate,
     username: String,
-    games: Vec<GameNameAndPlayState>,
+    games: Vec<UserGamePresenter>,
 }
 
 #[derive(Template)]
@@ -91,7 +91,7 @@ struct UserSettingsFormTemplate {
     steam_id: String,
 }
 
-struct GameNameAndPlayState {
+struct UserGamePresenter {
     name: String,
     user_game: model::UserGame,
 }
@@ -179,7 +179,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     };
 
     let user_games_with_names = itry!(model::get_user_games_with_names(user.id));
-    let games = user_games_with_names.into_iter().map(|(name, game)| GameNameAndPlayState{
+    let games = user_games_with_names.into_iter().map(|(name, game)| UserGamePresenter{
         name: name,
         user_game: game,
     }).collect();

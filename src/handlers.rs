@@ -44,11 +44,16 @@ macro_rules! redirect_logged_out_user {
     )
 }
 
+struct Alert {
+    level: String,
+    message: String,
+}
 
 #[derive(Template)]
 #[template(path = "base.html")]
 struct BaseTemplate {
     logged_in: bool,
+    alerts: Vec<Alert>,
 }
 
 #[derive(Template)]
@@ -151,7 +156,10 @@ fn home(req: &mut Request) -> IronResult<Response> {
     let logged_in = req.extensions.get::<SessionKey>().is_some();
     let mut response = Response::with((
         status::Ok,
-        itry!(BaseTemplate{logged_in: logged_in}.render()),
+        itry!(BaseTemplate{
+            logged_in: logged_in,
+            alerts: vec![],
+        }.render()),
     ));
 
     response.headers.set(ContentType::html());
@@ -189,6 +197,7 @@ fn user_log(req: &mut Request) -> IronResult<Response> {
     let template_context = UserLogTemplate {
         _parent: BaseTemplate{
             logged_in: req.extensions.get::<SessionKey>().is_some(),
+            alerts: vec![],
         },
         username: user.username,
         games: games,
@@ -210,6 +219,7 @@ fn signup_form(req: &mut Request) -> IronResult<Response> {
         itry!(SignupFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
+                alerts: vec![],
             },
         }.render()),
     ));
@@ -224,6 +234,7 @@ fn login_form(req: &mut Request) -> IronResult<Response> {
         itry!(LoginFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
+                alerts: vec![],
             },
         }.render()),
     ));
@@ -273,6 +284,7 @@ fn add_user_game_form(req: &mut Request) -> IronResult<Response> {
         itry!(UserGameFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
+                alerts: vec![],
             },
             page_title: "Add a Game".to_string(),
             submit_button: "Add Game".to_string(),
@@ -343,6 +355,7 @@ fn user_settings_form(req: &mut Request) -> IronResult<Response> {
         itry!(UserSettingsFormTemplate{
             _parent: BaseTemplate{
                 logged_in: req.extensions.get::<SessionKey>().is_some(),
+                alerts: vec![],
             },
             username: user.username,
             steam_id: steam_id,
@@ -402,7 +415,7 @@ fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::with((
         status::Ok,
         itry!(UserGameFormTemplate{
-            _parent: BaseTemplate{logged_in: true},
+            _parent: BaseTemplate{logged_in: true, alerts: vec![]},
             page_title: format!("Edit Game: {}", game.name),
             submit_button: "Update Game".to_string(),
             user_game_states: user_game_states(),

@@ -33,6 +33,10 @@
                 </div><!--/.container-fluid -->
             </nav>
 
+            {% for alert in alerts %}
+                <div class="alert alert-{{alert.level}}">{{ alert.message }}</div>
+            {% endfor %}
+
             <div class="jumbotron">
             {% block body %}{% endblock %}
             </div>

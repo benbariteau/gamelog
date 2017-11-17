@@ -400,15 +400,11 @@ fn get_platforms() -> Result<Vec<Platform>, Error> {
 fn edit_user_game_form(req: &mut Request) -> IronResult<Response> {
     let session = try_session!(req);
 
-    let params = itry!(
-        req.extensions.get::<Router>().ok_or::<Error>("no router".into())
-    );
-
-    let user_game_id_string = itry!(
-        params.find("user_game_id").ok_or::<Error>("no user game id provided".into())
-    );
-
-    let user_game_id: i64 = itry!(user_game_id_string.parse());
+    let user_game_id = {
+        let params = itry!(req.extensions.get::<Router>().ok_or::<Error>("no router".into()));
+        let user_game_id_string = itry!(params.find("user_game_id").ok_or::<Error>("no user game id provided".into()));
+        itry!(user_game_id_string.parse())
+    };
 
     let user_game = itry!(model::get_user_game_by_id(user_game_id));
 

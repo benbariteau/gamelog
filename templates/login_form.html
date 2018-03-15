@@ -3,15 +3,13 @@
 {% block title %}Login{% endblock %}
 
 {% block body %}
-<form method="post">
-    <div>
-        <label for="username">Username or Email:</label>
-        <input type="text" id="username-or-email" name="username-or-email" />
+<form method="post" class="form-auth">
+    <div class="form-group">
+        <input type="text" id="username-or-email" name="username-or-email" placeholder="Username or email" class="form-control"/>
     </div>
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" />
+    <div class="form-group">
+        <input type="password" id="password" name="password" placeholder="Email" class="form-control"/>
     </div>
-    <button type="submit">Log In</button>
+    <button type="submit" class="btn btn-primary btn-block">Log In</button>
 </form>
 {% endblock %}
